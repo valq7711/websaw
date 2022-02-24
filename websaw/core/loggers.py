@@ -1,3 +1,5 @@
+# Copyrighted (c) by Massimo Di Pierro (2017-2022), Valery Kucherov (2022)
+
 import os
 import logging
 import datetime
@@ -122,12 +124,12 @@ class ErrorLogger:
 
 class DatabaseErrorLogger:
     def __init__(self):
-        """creates the py4web_error table in the service database"""
-        uri = os.environ["PY4WEB_SERVICE_DB_URI"]
-        folder = os.environ["PY4WEB_SERVICE_FOLDER"]
+        """creates the websaw_error table in the service database"""
+        uri = os.environ["WEBSAW_SERVICE_DB_URI"]
+        folder = os.environ["WEBSAW_SERVICE_FOLDER"]
         self.db = DAL(uri, folder=folder)
         self.db.define_table(
-            "py4web_error",
+            "websaw_error",
             Field("uuid"),
             Field("app_name"),
             Field("method"),
@@ -145,7 +147,7 @@ class DatabaseErrorLogger:
         # self.db._adapter.reconnect() ?
         ticket_uuid = str(uuid.uuid4())
         try:
-            self.db.py4web_error.insert(
+            self.db.websaw_error.insert(
                 uuid=ticket_uuid,
                 app_name=app_name,
                 method=request.method,
@@ -166,31 +168,31 @@ class DatabaseErrorLogger:
         """retrieve a ticket from error database"""
         db = self.db
         if ticket_uuid:
-            query, orderby = db.py4web_error.uuid == ticket_uuid, None
+            query, orderby = db.websaw_error.uuid == ticket_uuid, None
             rows = db(query).select(orderby=orderby, limitby=(0, 1)).as_list()
         else:
-            orderby = ~db.py4web_error.timestamp
-            groupby = db.py4web_error.path | db.py4web_error.error
+            orderby = ~db.websaw_error.timestamp
+            groupby = db.websaw_error.path | db.websaw_error.error
             query = (
-                db.py4web_error.timestamp
+                db.websaw_error.timestamp
                 > datetime.datetime.now() - datetime.timedelta(days=7)
             )
-            fields = [field for field in db.py4web_error if not field.type == "json"]
-            fields.append(db.py4web_error.id.count())
+            fields = [field for field in db.websaw_error if not field.type == "json"]
+            fields.append(db.websaw_error.id.count())
             list_rows = (
                 db(query).select(*fields, orderby=orderby, groupby=groupby).as_list()
             )
             rows = []
             for item in list_rows:
-                row = item["py4web_error"]
-                row["count"] = item["_extra"][str(db.py4web_error.id.count())]
+                row = item["websaw_error"]
+                row["count"] = item["_extra"][str(db.websaw_error.id.count())]
                 rows.append(row)
         return rows if not ticket_uuid else rows[0] if rows else None
 
     def clear(self):
         """erase all tickets from database"""
         db = self.db
-        db(db.py4web_error).delete()
+        db(db.websaw_error).delete()
         self.db.commit()
 
 

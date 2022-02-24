@@ -1,5 +1,5 @@
 
-class WebsawException(BaseException):
+class WebsawException(Exception):
     pass
 
 

@@ -30,8 +30,8 @@ def sass_compile(changed_files):
 def app_watch_handler(watched_app_subpaths):
     stack = inspect.stack
     invoker = pathlib.Path(stack()[1].filename)
-    apps_path = pathlib.Path(os.environ["PY4WEB_APPS_FOLDER"])
-    app = invoker.relative_to(os.environ["PY4WEB_APPS_FOLDER"]).parts[0]
+    apps_path = pathlib.Path(os.environ["WEBSAW_APPS_FOLDER"])
+    app = invoker.relative_to(os.environ["WEBSAW_APPS_FOLDER"]).parts[0]
 
     def decorator(func):
         handler = "{}.{}".format(func.__module__, func.__name__)

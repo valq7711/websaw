@@ -1,6 +1,11 @@
 import sys
 import os
 import json
+import ombott
+import logging
+
+from websaw.core.loggers import get_error_snapshot, error_logger
+from .error_pages import error_page
 
 from .core import (
     request,
@@ -90,7 +95,7 @@ class DefaultApp(BaseApp):
         )
 
         render_map = {dict: jsonfy}
-        super().__init__(cfg, ctx, render_map)
+        super().__init__(cfg, ctx, render_map, _default_exception_handler)
 
     def use(self, *fixt):
         return super().use(*[
@@ -102,3 +107,30 @@ class DefaultApp(BaseApp):
 def jsonfy(ctx: BaseContext, dct):
     ctx.response.headers['Content-Type'] = 'application/json'
     return json.dumps(dct, sort_keys=True, indent=2, ensure_ascii=False)
+
+
+def _default_exception_handler(ctx: BaseContext, exc):
+    response = ctx.response
+    try:
+        raise exc
+    except HTTP as http:
+        response.status = http.status
+        ret = getattr(http, "body", "")
+        http_headers = getattr(http, 'headers', None)
+        if http_headers:
+            response.headers.update(http_headers)
+        ctx.output = ret
+    except ombott.HTTPResponse as resp:
+        ctx.output = resp
+    except Exception:
+        snapshot = get_error_snapshot()
+        logging.error(snapshot["traceback"])
+        ticket_uuid = error_logger.log(ctx.app_data.app_name, snapshot) or "unknown"
+        return ombott.HTTPResponse(
+            body=error_page(
+                500,
+                button_text=ticket_uuid,
+                href="/_dashboard/ticket/" + ticket_uuid,
+            ),
+            status=500,
+        )

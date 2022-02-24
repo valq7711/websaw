@@ -32,7 +32,7 @@ class Reloader:
 
     @staticmethod
     def get_apps_folder():
-        return os.environ["PY4WEB_APPS_FOLDER"]
+        return os.environ["WEBSAW_APPS_FOLDER"]
 
     @classmethod
     def register_app_data(cls, app_data):

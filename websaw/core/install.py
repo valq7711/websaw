@@ -23,7 +23,7 @@ def install_args(kwargs, reinstall_apps=False):
     config.service_folder = os.path.join(apps_folder, config.service_folder)
 
     for key, val in config.items():
-        os.environ[f"PY4WEB_{key.upper()}"] = str(val)
+        os.environ[f"WEBSAW_{key.upper()}"] = str(val)
 
     yes2 = yes = kwargs.get("yes", False)
 

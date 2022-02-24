@@ -8,6 +8,10 @@ from .exceptions import FixtureProcessError
 from .reloader import Reloader
 
 
+def _dummy_exception_handler(ctx: BaseContext, exc: Exception):
+    raise exc
+
+
 class StaticRegistry:
 
     static_file = staticmethod(globs.static_file)
@@ -96,11 +100,18 @@ class BaseApp:
     add_route = staticmethod(globs.app.add_route)
     reloader = Reloader
 
-    def __init__(self, default_config, default_ctx: BaseContext, render_map: dict = None):
+    def __init__(
+        self,
+        default_config,
+        default_ctx: BaseContext,
+        render_map: dict = None,
+        exception_handler=None
+    ):
         self.default_config = default_config
         self.default_ctx = default_ctx
         self._registered = {}
         self.render_map = render_map
+        self.exception_handler = exception_handler
 
     def _register(self, fun, route_args, fixtures=None):
         meta = self._registered.setdefault(
@@ -133,13 +144,21 @@ class BaseApp:
             return Fixtured(h, fixt)
         return decorator
 
-    def mount(self, config: dict = None, context: BaseContext = None, render_map: dict = None):
+    def mount(
+        self,
+        config: dict = None,
+        context: BaseContext = None,
+        render_map: dict = None,
+        exception_handler=None
+    ):
         if context is None:
             context = self.default_ctx
         if config is None:
             config = self.default_config
         if render_map is None:
             render_map = self.render_map
+        if exception_handler is None:
+            exception_handler = self.exception_handler
 
         context = context.clone()
         app_data = context.app_data = SimpleNamespace(
@@ -149,7 +168,7 @@ class BaseApp:
             **config
         )
         for raw_h, meta in self._registered.items():
-            h = self.make_handler(raw_h, meta.fixtures, context, self.render_map)
+            h = self.make_handler(raw_h, meta.fixtures, context, render_map, exception_handler)
             for route_args, route_kw in meta.routes_args:
                 self._mount_route(context.app_data, h, route_args, route_kw)
 
@@ -163,7 +182,8 @@ class BaseApp:
         return context
 
     @staticmethod
-    def make_handler(h, fixtures, ctx: BaseContext, render_map: dict = None):
+    def make_handler(h, fixtures, ctx: BaseContext, render_map: dict = None, exception_handler=None):
+
         hooks = False
         if fixtures:
             hooks = {
@@ -173,6 +193,9 @@ class BaseApp:
             } or False
         else:
             fixtures = False
+
+        if exception_handler is None:
+            exception_handler = _dummy_exception_handler
 
         def handler(**kw):
             exc = None
@@ -187,7 +210,7 @@ class BaseApp:
                 exc = exc_
             ctx.finalize(exc)
             if ctx.exception is not None:
-                raise ctx.exception
+                exception_handler(ctx, ctx.exception)
 
             if render_map:
                 output = ctx.output

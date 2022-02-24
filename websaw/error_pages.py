@@ -2,8 +2,8 @@
 import http.client
 import json
 
-from . import globs
-from .render import render
+from .core import globs
+from .core.render import render
 
 
 ERROR_PAGES = {
