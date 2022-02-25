@@ -1,8 +1,17 @@
+import re
 from setuptools import setup
 
-__author__ = "Kucherov Valery <valq7711@gmail.com>"
-__license__ = "MIT"
-__version__ = "0.0.1"
+
+def get_module_var(varname):
+    regex = re.compile(fr"^{varname}\s*\=\s*['\"](.+?)['\"]", re.M)
+    mobj = next(regex.finditer(open("websaw/__init__.py").read()))
+    return mobj.groups()[0]
+
+
+__author__ = get_module_var('__author__')
+__license__ = get_module_var('__license__')
+__version__ = get_module_var('__version__')
+
 
 setup(
     name="websaw",
@@ -43,5 +52,5 @@ setup(
         "renoir",
     ],
     python_requires='>=3.7',
-    python_modules = ['websaw']
+    packages=['websaw', 'websaw.core', 'websaw.fixtures'],
 )

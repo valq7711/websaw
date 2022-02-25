@@ -71,25 +71,29 @@ def watch(apps_folder, server_config, mode="sync"):
         click.echo(
             "watching (%s-mode) python file changes in: %s" % (mode, apps_folder)
         )
-        async for changes in awatch(os.path.join(apps_folder)):
-            apps = []
-            for subpath in [pathlib.Path(pair[1]) for pair in changes]:
-                name = subpath.relative_to(apps_folder).parts[0]
-                if subpath.suffix == ".py":
-                    apps.append(name)
-                ## manage `app_watch_handler` decorators
-                elif subpath.as_posix() in APP_WATCH["files"]:
-                    handlers = APP_WATCH["files"][subpath.as_posix()]
-                    for handler in handlers:
-                        if handler not in APP_WATCH["tasks"]:
-                            APP_WATCH["tasks"][handler] = {}
-                        APP_WATCH["tasks"][handler][subpath.as_posix()] = True
+        try:
+            async for changes in awatch(os.path.join(apps_folder)):
+                apps = []
+                for subpath in [pathlib.Path(pair[1]) for pair in changes]:
+                    name = subpath.relative_to(apps_folder).parts[0]
+                    if subpath.suffix == ".py":
+                        apps.append(name)
+                    ## manage `app_watch_handler` decorators
+                    elif subpath.as_posix() in APP_WATCH["files"]:
+                        handlers = APP_WATCH["files"][subpath.as_posix()]
+                        for handler in handlers:
+                            if handler not in APP_WATCH["tasks"]:
+                                APP_WATCH["tasks"][handler] = {}
+                            APP_WATCH["tasks"][handler][subpath.as_posix()] = True
 
-            if mode == "lazy":
-                DIRTY_APPS.update(apps)
-            else:
-                core_event_bus.emit(CoreEvents.RELOAD_APPS, *apps)
-                try_app_watch_tasks()
+                if mode == "lazy":
+                    DIRTY_APPS.update(apps)
+                else:
+                    core_event_bus.emit(CoreEvents.RELOAD_APPS, *apps)
+                    try_app_watch_tasks()
+        except RuntimeError as exc:
+            if str(exc).endswith('after shutdown'):
+                pass
 
     if server_config["number_workers"] > 1:
         click.echo("--watch option has no effect in multi-process environment \n")

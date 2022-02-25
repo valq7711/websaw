@@ -282,16 +282,12 @@ def run(**kwargs):
                 % (kwargs["host"], kwargs["port"])
             )
 
-    # Catch interrupts like Ctrl-C
-    orig_ctrl_c_handler = signal.getsignal(signal.SIGINT)
-    signal.signal(signal.SIGINT, keyboardInterruptHandler)
-
     # Start
     import_apps()
-    start_server(kwargs, orig_ctrl_c_handler)
+    start_server(kwargs)
 
 
-def start_server(kwargs, ctrl_c_orig):
+def start_server(kwargs):
     host = kwargs["host"]
     port = int(kwargs["port"])
     apps_folder = kwargs["apps_folder"]
@@ -303,27 +299,19 @@ def start_server(kwargs, ctrl_c_orig):
         number_workers=number_workers,
     )
 
-    if server_config["server"]:
-        for e in ("rocket", "Twisted"):
-            if e in server_config["server"]:
-                signal.signal(signal.SIGINT, ctrl_c_orig)
-                break
-
     if not server_config["server"]:
-        if server_config["platform"] == "windows":
-            server_config["server"] = "tornado"
-            if sys.version_info >= (
-                3,
-                8,
-            ):  # see  https://bugs.python.org/issue37373 FIX: tornado/py3.8 on windows
-                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        elif number_workers <= 1:
-            server_config["server"] = "tornado"
+        if server_config["platform"] == "windows" or number_workers < 2:
+            server_config["server"] = "rocket"
         else:
             if not gunicorn:
                 logging.error("gunicorn not installed")
                 return
             server_config["server"] = "gunicorn"
+
+    # Catch interrupts like Ctrl-C if needed
+    if server_config["server"] not in {"rocket", "wsgirefWsTwistedServer"}:
+        signal.signal(signal.SIGINT, keyboardInterruptHandler)
+
     params["server"] = server_config["server"]
     if params["server"] in server_adapters.__all__:
         params["server"] = getattr(server_adapters, params["server"])()
