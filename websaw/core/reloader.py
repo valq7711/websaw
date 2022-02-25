@@ -4,6 +4,7 @@ import os
 import click
 import importlib
 import traceback
+from typing import Dict, List
 
 from .globs import app as om_app
 from .loggers import error_logger, get_error_snapshot
@@ -27,7 +28,7 @@ class Reloader:
 
     modules = {}
     errors = {}
-    apps_data: dict[str, list] = {}
+    apps_data: Dict[str, list] = {}
     current_import_app: str
 
     @staticmethod

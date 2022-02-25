@@ -1,6 +1,6 @@
 import threading
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 from .exceptions import FixtureProcessError
 from . import globs
@@ -9,10 +9,10 @@ from .fixture import Fixture
 
 class IContextSate:
 
-    in_use: dict[str, Fixture]
-    in_use_stack: list[Fixture]
+    in_use: Dict[str, Fixture]
+    in_use_stack: List[Fixture]
     output: Any
-    exception_stack: list[Exception]
+    exception_stack: List[Exception]
     shared_data: dict
 
 
@@ -43,7 +43,7 @@ class MetaContext(type):
 
 class BaseContext(metaclass=MetaContext):
 
-    _fixt: dict[str, Fixture] = {}  # see metaclass
+    _fixt: Dict[str, Fixture] = {}  # see metaclass
 
     _fixture_initialize = Fixture.initialize_safe_storage
     _fixture_prepare_for_use = Fixture.prepare_for_use

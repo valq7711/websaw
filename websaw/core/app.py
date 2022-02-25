@@ -1,6 +1,7 @@
 import os
 import functools
 from types import SimpleNamespace
+from typing import Dict, List
 
 from . import globs
 from .context import BaseContext
@@ -20,7 +21,7 @@ class StaticRegistry:
         folder: str
         client_apps: set
 
-    mounted: dict[str, Registered] = {}
+    mounted: Dict[str, Registered] = {}
 
     def register(self, base_url, folder, app):
         folder_apps = self.mounted.get(base_url)
@@ -82,7 +83,7 @@ _static_registry = StaticRegistry()
 
 
 class Fixtured:
-    def __init__(self, h, fixt: list[str]):
+    def __init__(self, h, fixt: List[str]):
         if isinstance(h, self.__class__):
             fixt = [*fixt, *h.fixt]
             h = h.h
