@@ -18,7 +18,7 @@ class Fixture:
         cls._local.fixtures_data[f] = SimpleNamespace()
 
     @property
-    def data(self):
+    def data(self) -> SimpleNamespace:
         return self._local.fixtures_data[self]
 
     def app_mounted(self, ctx):

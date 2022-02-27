@@ -29,6 +29,7 @@ class DAL(_DAL, Fixture):
             self.rollback()
         else:
             self.commit()
+        self._adapter.close(action=None, really=False)
 
 
 # make sure some variables in pydal are thread safe

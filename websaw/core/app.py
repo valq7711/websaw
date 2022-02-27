@@ -105,14 +105,10 @@ class BaseApp:
         self,
         default_config,
         default_ctx: BaseContext,
-        render_map: dict = None,
-        exception_handler=None
     ):
         self.default_config = default_config
         self.default_ctx = default_ctx
         self._registered = {}
-        self.render_map = render_map
-        self.exception_handler = exception_handler
 
     def _register(self, fun, route_args, fixtures=None):
         meta = self._registered.setdefault(
@@ -156,10 +152,9 @@ class BaseApp:
             context = self.default_ctx
         if config is None:
             config = self.default_config
-        if render_map is None:
-            render_map = self.render_map
-        if exception_handler is None:
-            exception_handler = self.exception_handler
+
+        render_map: dict = config.get('render_map')
+        exception_handler = config.get('exception_handler')
 
         context = context.clone()
         app_data = context.app_data = SimpleNamespace(

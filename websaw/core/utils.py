@@ -21,7 +21,7 @@ url_quote = urllib.parse.quote
 def redirect(location):
     """our redirect does not delete cookies and headers like bottle.HTTPResponse does;
     it is considered a success, not failure"""
-    response.headers["Location"] = location
+    response.headers["Location"] = str(location)
     raise HTTP(303)
 
 

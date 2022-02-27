@@ -53,6 +53,7 @@ class BaseContext(metaclass=MetaContext):
     app_data: Optional[SimpleNamespace] = None
 
     def __init__(self):
+        self._fixt = {**self._fixt}
         self._reverse_map = {f: k for k, f in self._fixt.items()}
         self._local = Local()
         self._local.in_process = False
@@ -93,7 +94,10 @@ class BaseContext(metaclass=MetaContext):
         in_use = state.in_use
         f = in_use.get(k)
         if f is None:
-            f = self._fixt[k]
+            try:
+                f = self._fixt[k]
+            except KeyError:
+                raise AttributeError(f'{k}')
             self._fixture_prepare_for_use(f)
             try:
                 f.take_on(self)
@@ -114,6 +118,7 @@ class BaseContext(metaclass=MetaContext):
 
     def clone(self, app_data=None):
         ret = self.__class__()
+        ret._fixt = {**self._fixt}
         ret.app_data = app_data
         return ret
 

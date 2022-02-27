@@ -31,6 +31,9 @@ from .fixtures import (
     Session,
     DAL,
     URL,
+    XAuth,
+    AuthGuard,
+    AuthErr,
 )
 
 from pydal import Field
@@ -57,11 +60,15 @@ __all__ = (
 
     'HTTP',
     'WebsawException',
+
+    'XAuth',
+    'AuthGuard',
+    'AuthErr'
 )
 
 __author__ = "Kucherov Valery <valq7711@gmail.com>"
 __license__ = "MIT"
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 
 
 def _maybe_gevent():
@@ -76,6 +83,7 @@ _maybe_gevent()  # noqa
 class DefaultContext(BaseContext):
     session = Session()
     URL = URL()
+    auth_guard = AuthGuard()
 
 
 class DefaultApp(BaseApp):
@@ -91,11 +99,12 @@ class DefaultApp(BaseApp):
             static_base_url=f'/{app_name}',
             folder=folder,
             static_folder=static_folder,
-            template_folder=template_folder
+            template_folder=template_folder,
+            render_map={dict: jsonfy},
+            exception_handler=_default_exception_handler,
         )
 
-        render_map = {dict: jsonfy}
-        super().__init__(cfg, ctx, render_map, _default_exception_handler)
+        super().__init__(cfg, ctx)
 
     def use(self, *fixt):
         return super().use(*[
@@ -126,7 +135,7 @@ def _default_exception_handler(ctx: BaseContext, exc):
         snapshot = get_error_snapshot()
         logging.error(snapshot["traceback"])
         ticket_uuid = error_logger.log(ctx.app_data.app_name, snapshot) or "unknown"
-        return ombott.HTTPResponse(
+        ctx.output = ombott.HTTPResponse(
             body=error_page(
                 500,
                 button_text=ticket_uuid,
