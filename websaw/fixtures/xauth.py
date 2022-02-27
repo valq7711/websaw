@@ -108,7 +108,9 @@ class XAuth(Fixture):
         self.ban_field = ban_field
 
     def take_on(self, ctx: BaseContext):
-        self.data.session = ctx.session
+        session = self.data.session = ctx.session
+        user = session.get("user")
+        self.data.user = user
 
     def user_by_login(self, login: str) -> dict:
         """Return user record with credentials.
@@ -131,12 +133,18 @@ class XAuth(Fixture):
         session["uuid"] = str(uuid.uuid1())
 
     @property
-    def is_logged_in(self):
-        return self.user_id is not None
+    def user(self):
+        user = self.data.user
+        return user if user and "id" in user else None
 
     @property
     def user_id(self):
-        return self.data.session.get("user", {}).get("id")
+        user = self.user
+        return user and user["id"]
+
+    @property
+    def is_logged_in(self):
+        return self.user_id is not None
 
     # Methods that do not assume a user
 

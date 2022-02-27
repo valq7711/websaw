@@ -20,6 +20,7 @@ class Auth(XAuth):
     def user_for_session(self, user):
         suser = super().user_for_session(user)
         suser['email'] = user['email']
+        suser['name'] = user['name']
         return suser
 
 
@@ -66,6 +67,13 @@ def login(ctx: Context):
     if user:
         redirect(ctx.URL('private'))
     return autherr.as_dict()
+
+
+@app.route('logout')
+def logout(ctx: Context):
+    user = ctx.auth.user or dict(name="Guest")
+    ctx.auth.logout()
+    return f"Byе {user['name']}!"
 
 
 @app.route('private')
