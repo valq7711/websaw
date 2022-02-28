@@ -51,7 +51,7 @@ class Reloader:
         for app_name in app_names:
             ret.add(app_name)
             module_name = f"apps.{app_name}"
-            app = getattr(sys.modules[module_name], 'app', None)
+            app = getattr(sys.modules.get(module_name), 'app', None)
             get_all_clients = getattr(app, 'get_all_clients', None)
             if not get_all_clients:
                 continue
