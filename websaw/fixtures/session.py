@@ -39,19 +39,24 @@ class Session(Fixture):
         assert self.secret
 
     def take_on(self, ctx: BaseContext):
+        self.data.ctx = ctx
         self.load(ctx)
 
     def take_off(self, ctx):
         if self.data.changed:
             self.save()
 
-    def initialize(self, request, response, app_name="unknown", data=None, secure=False, storage=None):
+    @staticmethod
+    def get_session_cookie_name(app_data):
+        return f'{app_data.app_name}_session'
+
+    def initialize(self, request, response, session_cookie_name, data=None, secure=False, storage=None):
         local = self.data
         local.request = request
         local.response = response
         local.changed = False
         local.data = data or {}
-        local.session_cookie_name = f"{app_name}_session"
+        local.session_cookie_name = session_cookie_name  # f"{app_name}_session"
         local.secure = secure
         local.storage = storage
 
@@ -66,7 +71,7 @@ class Session(Fixture):
         self.initialize(
             request=request,
             response=ctx.response,
-            app_name=ctx.app_data.app_name,
+            session_cookie_name=self.get_session_cookie_name(ctx.app_data),
             secure=request.url.startswith("https"),  # FIXME
             storage=storage
         )
@@ -165,3 +170,11 @@ class Session(Fixture):
         data.clear()
         data["uuid"] = str(uuid.uuid1())
         data["secure"] = local.secure
+
+
+class GroupSession(Session):
+
+    @staticmethod
+    def get_session_cookie_name(app_data):
+        return f'{app_data.group_name}_session'
+

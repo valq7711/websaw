@@ -28,12 +28,13 @@ from .core import (
 
 from .fixtures import (
     Template,
-    Session,
+    Session, GroupSession,
     DAL,
     URL,
     XAuth,
     AuthGuard,
     AuthErr,
+    CurrentUser,
 )
 
 from pydal import Field
@@ -54,7 +55,7 @@ __all__ = (
     'Cache',
 
     'Template',
-    'Session',
+    'Session', 'GroupSession',
     'DAL',
     'Field',
 
@@ -63,7 +64,8 @@ __all__ = (
 
     'XAuth',
     'AuthGuard',
-    'AuthErr'
+    'AuthErr',
+    'CurrentUser',
 )
 
 __author__ = "Kucherov Valery <valq7711@gmail.com>"
@@ -81,13 +83,15 @@ _maybe_gevent()  # noqa
 
 
 class DefaultContext(BaseContext):
+    group_session = GroupSession()
     session = Session()
     URL = URL()
     auth_guard = AuthGuard()
+    current_user = CurrentUser()
 
 
 class DefaultApp(BaseApp):
-    def __init__(self, ctx: BaseContext):
+    def __init__(self, ctx: BaseContext, config=None):
         pjoin = os.path.join
         app_name = Reloader.current_import_app
         folder = pjoin(Reloader.get_apps_folder(), app_name)
@@ -102,7 +106,10 @@ class DefaultApp(BaseApp):
             template_folder=template_folder,
             render_map={dict: jsonfy},
             exception_handler=_default_exception_handler,
+            group_name=None,
         )
+        if config:
+            cfg.update(config)
 
         super().__init__(cfg, ctx)
 

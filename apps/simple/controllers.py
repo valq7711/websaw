@@ -22,7 +22,7 @@ class Context(DefaultContext):
 
 
 ctx_ = Context()
-app = DefaultApp(ctx_)
+app = DefaultApp(ctx_, dict(group_name='websaw_apps_group_one'))
 
 
 @app.route('index')
@@ -39,6 +39,7 @@ def index(ctx):
 @app.route('session')
 def session(ctx: DefaultContext):
     ret = {
+        'group_session_data': {**ctx.group_session},
         'session_data': {**ctx.session},
         'local_data_keys': [*ctx.session.data.__dict__],
     }

@@ -35,6 +35,55 @@ class AuthErr(AuthErrEnumMixin, Enum):
     FORBIDDEN = ('forbidden', 403)
 
 
+class CurrentUser(Fixture):
+
+    def take_on(self, ctx: BaseContext):
+        group_name = getattr(ctx.app_data, 'group_name', None)
+        if group_name is not None:
+            session: Fixture = ctx.group_session
+        else:
+            session: Fixture = ctx.session
+
+        self.data.session = session
+
+        user = session.get("user")
+        user_id = user and user.get('id')
+
+        if not user_id:
+            if user is not None:
+                self.clear()
+
+    def take_off(self, ctx):
+        if self.user:
+            activity = self.recent_activity
+            time_now = calendar.timegm(time.gmtime())
+            if not activity or time_now - activity > 6:
+                self.recent_activity = time_now
+        else:
+            self.recent_activity = None
+
+    @property
+    def recent_activity(self):
+        return self.data.session.get("recent_activity")
+
+    @recent_activity.setter
+    def recent_activity(self, v):
+        self.data.session["recent_activity"] = v
+        return v
+
+    @property
+    def user(self):
+        return self.data.session.get("user")
+
+    def store_user_in_session(self, user: dict):
+        session = self.data.session
+        session["user"] = user
+        session["uuid"] = str(uuid.uuid1())
+
+    def clear(self):
+        del self.data.session["user"]
+
+
 class AuthGuard(Fixture):
     config_fkey = 'auth_guard_config'
 
@@ -52,36 +101,25 @@ class AuthGuard(Fixture):
         self.session_timeout = session_timeout
 
     def take_on(self, ctx: BaseContext):
-        self.data.user_id = None
-        self.data.user = None
-
-        session: Fixture = ctx.session
-        user = session.get("user")
-        user_id = user and user.get('id')
+        cuser: CurrentUser = ctx.current_user
         config: dict = ctx.ask(self.config_fkey, {})
         condition = config.get('condition', self.condition)
-        if user_id is None:
-            if config.get('allow_anonymous') is True:
-                # should be managed by fixture, which sets the config
-                return
-            else:
-                session["recent_activity"] = None
-                raise self._error(AuthErr.UNAUTHORIZED)
+        user = cuser.user
+        if cuser.user is None:
+            cuser.recent_activity = None
+            raise self._error(AuthErr.UNAUTHORIZED)
 
-        activity = session.get("recent_activity")
+        activity = cuser.recent_activity
         time_now = calendar.timegm(time.gmtime())
         session_timeout = self.session_timeout
         # enforce the optionl auth session expiration time
         if session_timeout and activity:
             if time_now - activity > session_timeout:
-                del session["user"]
+                cuser.clear()
                 raise self._error(AuthErr.TIMEOUT)
         # record the time of the latest activity for logged in user (with throttling)
-        if not activity or time_now - activity > 6:
-            session["recent_activity"] = time_now
         if condition and not condition(user):
             raise self._error(AuthErr.FORBIDDEN)
-        self.data.user_id = user_id
         self.data.user = user
 
     @property
@@ -108,9 +146,7 @@ class XAuth(Fixture):
         self.ban_field = ban_field
 
     def take_on(self, ctx: BaseContext):
-        session = self.data.session = ctx.session
-        user = session.get("user")
-        self.data.user = user
+        self.data.cuser = ctx.current_user
 
     def user_by_login(self, login: str) -> dict:
         """Return user record with credentials.
@@ -127,15 +163,11 @@ class XAuth(Fixture):
         return {"id": user[self.id_field]}
 
     def store_user_in_session(self, user: dict):
-        session = self.data.session
-        session["user"] = user
-        session["recent_activity"] = calendar.timegm(time.gmtime())
-        session["uuid"] = str(uuid.uuid1())
+        self.data.cuser.store_user_in_session(user)
 
     @property
     def user(self):
-        user = self.data.user
-        return user if user and "id" in user else None
+        return self.data.cuser.user
 
     @property
     def user_id(self):
@@ -144,7 +176,7 @@ class XAuth(Fixture):
 
     @property
     def is_logged_in(self):
-        return self.user_id is not None
+        return self.user is not None
 
     # Methods that do not assume a user
 
@@ -163,9 +195,8 @@ class XAuth(Fixture):
         user, error = self.check_credentials(name, password)
         if user:
             self.store_user_in_session(self.user_for_session(user))
-            self.data.user = user
             return (user, None)
         return None, error
 
     def logout(self):
-        self.data.session.clear()
+        self.data.cuser.clear()
