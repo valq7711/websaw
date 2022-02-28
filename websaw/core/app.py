@@ -1,85 +1,16 @@
-import os
 import functools
 from types import SimpleNamespace
-from typing import Dict, List
+from typing import List
 
 from . import globs
 from .context import BaseContext
 from .exceptions import FixtureProcessError
 from .reloader import Reloader
+from .static_registry import static_registry
 
 
 def _dummy_exception_handler(ctx: BaseContext, exc: Exception):
     raise exc
-
-
-class StaticRegistry:
-
-    static_file = staticmethod(globs.static_file)
-
-    class Registered(SimpleNamespace):
-        folder: str
-        client_apps: set
-
-    mounted: Dict[str, Registered] = {}
-
-    def register(self, base_url, folder, app):
-        folder_apps = self.mounted.get(base_url)
-        if folder_apps:
-            if os.path.samefile(folder_apps.folder, folder):
-                raise KeyError(
-                    f'URL already in use: {base_url} => path:'
-                    f'{folder_apps.folder}'
-                )
-            folder_apps.client_apps.add(app)
-        self.mounted[base_url] = SimpleNamespace(
-            folder=folder, client_apps={app}
-        )
-
-    def get_registered(self, base_url, folder):
-        folder_apps = self.mounted.get(base_url)
-        if not folder_apps:
-            return None
-        if os.path.samefile(folder_apps.folder, folder):
-            return folder_apps
-
-    def make_rule_and_handler(self, static_base_url, folder, client_app):
-        if not os.path.exists(folder):
-            return None, None
-        registered = self.get_registered(static_base_url, folder)
-        if registered:
-            registered.client_apps.add(client_app)
-            return None, None
-
-        self.register(static_base_url, folder, client_app)
-        rule = fr'{static_base_url}/static/<re((_\d+(\.\d+){2}/)?)><fp.path()>'
-        h = self.make_static_handler(folder)
-        return rule, h
-
-    @classmethod
-    def make_static_handler(cls, folder):
-        response = globs.response
-
-        def serve_static(fp):
-            response.headers.setdefault("Pragma", "cache")
-            response.headers.setdefault("Cache-Control", "private")
-            return cls.static_file(fp, root=folder)
-        return serve_static
-
-    def __contains__(self, base_url_folder_tuple):
-        if isinstance(base_url_folder_tuple, str):
-            raise TypeError(
-                f'A pair like [url, folder] is required, '
-                f'got string: {base_url_folder_tuple}'
-            )
-        base_url, folder = base_url_folder_tuple
-        folder_apps = self.mounted.get(base_url)
-        if not folder_apps:
-            return False
-        return os.path.samefile(folder_apps.folder, folder)
-
-
-_static_registry = StaticRegistry()
 
 
 class Fixtured:
@@ -97,7 +28,7 @@ class Fixtured:
 
 class BaseApp:
 
-    static_registry = _static_registry
+    static_registry = static_registry
     add_route = staticmethod(globs.app.add_route)
     reloader = Reloader
 

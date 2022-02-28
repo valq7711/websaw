@@ -4,11 +4,12 @@ import os
 import click
 import importlib
 import traceback
-from typing import Dict, List
+from typing import Dict
 
 from .globs import app as om_app
 from .loggers import error_logger, get_error_snapshot
 from .utils import module2filename
+from .static_registry import static_registry
 
 from .core_events import core_event_bus, CoreEvents
 
@@ -72,10 +73,11 @@ class Reloader:
             root_slash = f'{root}/'
             for app_data in cls.apps_data.pop(app_name, []):
                 for route in app_data.routes:
-                    if route.rule.startswith(root_slash):
+                    if route.rule == root or route.rule.startswith(root_slash):
                         # already removed
                         continue
                     om_app.router.remove(route)
+                static_registry.unregister(app_data.static_base_url, app_name)
 
     @classmethod
     def reimport_apps(cls, *apps):
