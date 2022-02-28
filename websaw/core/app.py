@@ -100,7 +100,7 @@ class BaseApp:
                 self._mount_route(context.app_data, h, route_args, route_kw)
 
         static_rule, static_h = self.static_registry.make_rule_and_handler(
-            app_data.static_base_url, app_data.static_folder, self
+            app_data.static_base_url, app_data.static_folder, app_data.app_name
         )
         if static_rule is not None:
             self._mount_route(context.app_data, static_h, (static_rule, 'GET', None), {})
