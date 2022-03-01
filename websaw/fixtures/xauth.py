@@ -146,7 +146,7 @@ class XAuth(Fixture):
         self.ban_field = ban_field
 
     def take_on(self, ctx: BaseContext):
-        self.ctx = ctx
+        self.data.ctx = ctx
         self.data.cuser = ctx.current_user
 
     def user_by_login(self, login: str) -> dict:
