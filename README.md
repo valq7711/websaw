@@ -1,19 +1,19 @@
 # websaw
-The next generation in rapid development applicartion framework designed to offer maximum flexiblity coupled with comprehensive functionality 'out fo the box' to allow you to create fully functional professional applications with minimal code.
+The next generation in rapid development applicartion framework designed to offer maximum flexiblity coupled with comprehensive functionality 'out of the box' to allow you to create fully functional professional applications with minimal code.
 
 ## Getting Started
-These instructions will get you a copy of the framework up and running on your local machine for development and testing purposes. See the relevant deployment documentaion for notes on how to deploy the project on a live system. Installation and setup will vary depending on your operating system and preferred installation method and are covered in great detail in the websaw online documentation
+These instructions will get you a copy of the framework up and running on your local machine for development and testing purposes. See the relevant deployment documentaion for notes on how to deploy the project on a live system. Installation and setup will vary depending on your operating system and preferred installation method.
 
 ### Prerequisites
 
-* Python 3 > 3.6
+* Python 3 >= 3.7
 
 ### Installing
 
 Depending on your requirements and OS installation will vary. We reccomend you install into a virtual environment for testing and developemnt purposes.
 The following comands from bash / powershell will get you up and running in no time.
 Example:
-To set up a development environment on a Windows 10 machine with WSL2 follow these steps: 
+To set up a development environment on a Linux-like system or a Windows 10 machine with WSL2 follow these steps: 
 Open your wsl terminal
 ```
 $home/Development
@@ -32,7 +32,7 @@ Once websaw is running you can access a specific app at the following urls from 
 ```
 http://localhost:8000/{yourappname}/index
 ```
-In order to stop py4web, you need to hit Control-C on the window where you run it.
+In order to stop web server, you need to hit Control-C on the window where you run it.
 Please refer to the user documentation if you need to change the configs or wish to use different ports etc.
 
 ## License
