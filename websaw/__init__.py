@@ -91,14 +91,23 @@ class DefaultContext(BaseContext):
 
 
 class DefaultApp(BaseApp):
-    def __init__(self, ctx: BaseContext, config=None):
+    def __init__(self, ctx: BaseContext, config=None, *, name=None):
+        if name is None:
+            if self.__class__ is DefaultApp:
+                raise ValueError(
+                    f"{self.__class__} can't be directly instantiated without 'name' argument"
+                )
+            name = self.__module__
+        name_split = name.split('.')
+        app_name = name_split[-1]
+
         pjoin = os.path.join
-        app_name = Reloader.current_import_app
-        folder = pjoin(Reloader.get_apps_folder(), app_name)
+        folder = pjoin(Reloader.get_apps_folder(), *name_split[1:])
         static_folder = pjoin(folder, 'static')
         template_folder = pjoin(folder, 'templates')
 
         cfg = dict(
+            app_name=app_name,
             base_url=f'/{app_name}',
             static_base_url=f'/{app_name}',
             folder=folder,
@@ -114,8 +123,10 @@ class DefaultApp(BaseApp):
         super().__init__(cfg, ctx)
 
     def use(self, *fixt):
+        app_name = self.default_config['app_name']
         return super().use(*[
-            Template(f) if isinstance(f, str) else f
+            Template(f, path=self.default_config['template_folder'], inject={'mixin_name': app_name})
+            if isinstance(f, str) else f
             for f in fixt
         ])
 

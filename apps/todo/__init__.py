@@ -32,7 +32,7 @@ class Context(DefaultContext):
 
 ctx_ = Context()
 
-app = DefaultApp(ctx_)
+app = DefaultApp(ctx_, name=__package__)
 
 
 # example index page using session, template and vue.js
