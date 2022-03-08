@@ -1,7 +1,8 @@
-from websaw import DefaultApp, DefaultContext
+from websaw import DefaultApp, DefaultContext, Template
 from websaw.core import Fixture
 import ombott
 
+from ..mixins import info
 
 ombott.default_app().setup(dict(debug=True))
 
@@ -16,13 +17,17 @@ class LastVisited(Fixture):
         session['last_visited'] = last_visited
 
 
-# extend default context with our fixture
-class Context(DefaultContext):
+# extend default context with our fixture and info-mixin context
+class Context(info.Context, DefaultContext):
     track_visited = LastVisited()
+    welcome_templ_overwrite = Template('welcome.html')
 
 
 ctx_ = Context()
-app = DefaultApp(ctx_, dict(group_name='websaw_apps_group_one'))
+app = DefaultApp(ctx_, dict(group_name='websaw_apps_group_one'), name=__package__)
+
+# use mixin(s)
+app.mixin(info.app)
 
 
 @app.route('index')
@@ -45,7 +50,23 @@ def session(ctx: DefaultContext):
     }
     return ret
 
+
+# reuse mixin template
+@app.route('reuse_welcome_template')
+@app.use(ctx_.welcome_templ)
+def app_welcome(ctx: Context):
+    return dict(msg='Hey! This is message from app controller')
+
+
+
 # let's go to:
 # http://127.0.0.1:8000/simple
 # http://127.0.0.1:8000/simple/index
 # http://127.0.0.1:8000/simple/session
+# http://127.0.0.1:8000/simple/reuse_welcome_template
+
+# provided by mixin
+# http://127.0.0.1:8000/simple/welcome
+# http://127.0.0.1:8000/simple/welcome_template_overwritten
+# http://127.0.0.1:8000/simple/info/app
+

@@ -13,11 +13,16 @@ class Template(Fixture):
 
     cache = Cache(100)
 
-    def __init__(self, filename, path=None, delimiters="[[ ]]"):
-        self.context_key = filename
+    def __init__(self, filename, path=None, delimiters="[[ ]]", inject=None):
+        if ':' in filename:
+            context_key, filename = filename.split(':')
+        else:
+            context_key = None
+        self.context_key = context_key
         self.filename = filename
         self.path = path
         self.delimiters = delimiters
+        self.inject = inject or {}
 
     def take_off(self, ctx: BaseContext):
         output = ctx.output
@@ -31,7 +36,9 @@ class Template(Fixture):
             request=ctx.request,
             URL=ctx.URL,
             app_get=ctx.get,
+            mixin_get=ctx.mixin_get,
             __vars__=output,
+            **self.inject,
             **shared_data.get("template_context", {}),
             **output,
         )

@@ -43,7 +43,7 @@ class StaticRegistry:
         if os.path.samefile(folder_apps.folder, folder):
             return folder_apps
 
-    def make_rule_and_handler(self, static_base_url, folder, client_app):
+    def make_rule_and_handler(self, static_base_url: str, folder: str, client_app):
         if not os.path.exists(folder):
             return None, None
         registered = self.get_registered(static_base_url, folder)
@@ -52,7 +52,13 @@ class StaticRegistry:
             return None, None
 
         self.register(static_base_url, folder, client_app)
-        rule = fr'{static_base_url}/static/<re((_\d+(\.\d+){2}/)?)><fp.path()>'
+        if static_base_url.endswith('static'):
+            static_base_url = fr'{static_base_url}/<re((_\d+(\.\d+){2}/)?)>'
+        elif '/static/' in static_base_url:
+            static_base_url = static_base_url.replace('/static/', r'/static/<re((_\d+(\.\d+){2}/)?)>', 1)
+        if not static_base_url.endswith(('/', '/)?)>')):
+            static_base_url = f'{static_base_url}/'
+        rule = f'{static_base_url}<fp.path()>'
         h = self.make_static_handler(folder)
         return rule, h
 

@@ -57,7 +57,7 @@ class Context(DefaultContext):
 
 
 ctx_ = Context()
-app = DefaultApp(ctx_, dict(group_name='websaw_apps_group_one'))
+app = DefaultApp(ctx_, dict(group_name='websaw_apps_group_one'), name=__package__)
 
 
 @app.route('login')

@@ -57,7 +57,7 @@ class Context(DefaultContext):
 
 
 ctx_ = Context()
-app = DefaultApp(ctx_)
+app = DefaultApp(ctx_, name=__package__)
 
 
 @app.route('login')

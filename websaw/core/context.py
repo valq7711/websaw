@@ -19,6 +19,7 @@ class IContextSate:
 class Local(threading.local):
     state: IContextSate
     in_process: bool
+    mixin_data: SimpleNamespace
 
 
 class MetaContext(type):
@@ -57,6 +58,7 @@ class BaseContext(metaclass=MetaContext):
         self._reverse_map = {f: k for k, f in self._fixt.items()}
         self._local = Local()
         self._local.in_process = False
+        self._local.mixin_data = None
 
     @property
     def state(self) -> IContextSate:
@@ -77,11 +79,22 @@ class BaseContext(metaclass=MetaContext):
     def output(self, output):
         self._local.state.output = output
 
+    @property
+    def mixin_data(self):
+        return self._local.mixin_data
+
+    @mixin_data.setter
+    def mixin_data(self, v):
+        self._local.mixin_data = v
+
     def ask(self, fixture_key, default=None):
         return getattr(self, fixture_key, default)
 
     def get(self, app_attr, default=None):
         return getattr(self.app_data, app_attr, default)
+
+    def mixin_get(self, mixin_attr, default=None):
+        return getattr(self.mixin_data, mixin_attr, default)
 
     def __getitem__(self, k):
         return getattr(self.app_data, k)
@@ -111,7 +124,9 @@ class BaseContext(metaclass=MetaContext):
     def get_or_make_fixture_key(self, f) -> str:
         key = self._reverse_map.get(f)
         if key is None:
-            key = getattr(f, 'context_key', f'ID_{id(f)}')
+            key = getattr(f, 'context_key', None)
+            if key is None:
+                key = f'ID_{id(f)}'
             self._fixt[key] = f
             self._reverse_map[f] = key
         return key
@@ -121,6 +136,11 @@ class BaseContext(metaclass=MetaContext):
         ret._fixt = {**self._fixt}
         ret.app_data = app_data
         return ret
+
+    def extend(self, *mixins):
+        fixt = {}
+        [fixt.update(m._fixt) for m in reversed(mixins)]
+        [self._fixt.setdefault(k, f) for k, f in fixt.items()]
 
     def app_mounted(self):
         [f.app_mounted(self) for f in self._fixt.values()]
