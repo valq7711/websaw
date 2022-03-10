@@ -9,7 +9,7 @@ from pydal.objects import FieldVirtual
 from .param import Param
 from pydal._compat import to_native
 from pydal.validators import Validator
-
+from ombott import request
 from yatl.helpers import (
     A,
     TEXTAREA,
