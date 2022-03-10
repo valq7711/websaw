@@ -130,6 +130,5 @@ dmypy.json
 
 ##############################################
 .vscode/
-apps/
 trash*
 websaw/utils/

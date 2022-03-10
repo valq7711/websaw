@@ -1,0 +1,35 @@
+[[extend 'layout_app.html']]
+[[=form.custom.begin ]]  
+            
+<section class="section is-medium">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-5-tablet is-4-desktop is-3-widescreen">
+          <div class="box">
+            <div class="has-text-centered">
+              <img src="casson.png" width="150">
+            </div>
+            <div class="is-size-5 is-italic has-text-primary has-text-centered">Next generation IDP</div>
+            <label for="" class="label has-text-weight-normal">Username or Email</label>
+            <div class="control has-icons-left is-readonly">
+                [[=form.custom.widgets['username'] ]]
+                <span class="icon is-small is-left">
+                  <i class="fa fa-envelope"></i>
+                </span>
+            </div>
+            <label for="" class="label has-text-weight-normal">Password</label>
+              <div class="control has-icons-left">
+                [[=form.custom.widgets['login_password'] ]]
+                <span class="icon is-small is-left">
+                  <i class="fa fa-lock"></i>
+                </span>
+            </div>
+            <label for="" class="label has-text-weight-normal"></label>
+            
+            [[=form.custom.submit ]]
+            [[pass]]    
+        </div>
+      </div>
+    </div>
+</section>    
+[[=form.custom.end ]]
