@@ -18,6 +18,7 @@ def index(ctx: ctx_):
         redirect(ctx.URL('login'))
     if not ctx.auth.has_membership('admin'):
         flash.set('You do NOT have Admin access rights !!!', 'danger')
+        
     else:
         flash.set('Welcome %s %s you are logged in as Admin' % (user['first_name'], user['last_name']), 'success')
         redirect(ctx.URL('db_admin'))    

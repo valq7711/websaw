@@ -4,6 +4,11 @@ from pydal.validators import *
 import uuid
 import datetime
 from . import settings
+from .widgets import Select2, Dropify
+
+select2 = Select2()
+dropify = Dropify()
+
 def get_time():
     fulltime = datetime.datetime.utcnow() 
     stripped = fulltime.strftime('%Y-%m-%d %H:%M:%S')
@@ -55,8 +60,8 @@ auth_db.auth_roles._singular = 'Auth Role'
 auth_db.auth_roles._plural = 'Auth Roles'
 
 auth_db.define_table('auth_membership',
-                Field('user_id', 'reference auth_user'),
-                Field('role_id', 'reference auth_roles'))
+    Field('user_id', 'reference auth_user', widget=select2.widget),
+    Field('role_id', 'reference auth_roles',widget=select2.widget))
 auth_db.auth_membership._singular = 'Auth Membership'
 auth_db.auth_membership._plural = 'Auth Memberships'
 
@@ -66,8 +71,7 @@ auth_db.define_table(
     Field("image","upload",
         default="default.jpg",
         uploadfolder=settings.UPLOAD_PATH,
-        download_url=get_download_url, label="Profile Picture",
-    ),
+        download_url=get_download_url, label="Profile Picture", widget=dropify.widget),
     )
 
 def register_profile(field_values, user_id):
