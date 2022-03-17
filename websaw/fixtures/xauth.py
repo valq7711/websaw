@@ -147,8 +147,9 @@ class XAuth(Fixture):
 
     def take_on(self, ctx: BaseContext):
         self.data.ctx = ctx
+        self.data.session = ctx.session
         self.data.cuser = ctx.current_user
-
+        
     def user_by_login(self, login: str) -> dict:
         """Return user record with credentials.
 
@@ -158,13 +159,30 @@ class XAuth(Fixture):
         raise NotImplementedError()
 
     def register(self, fields):
-        raise NotImplementedError()
+        """Registers a new user after the user's parameters are entered
+        in the SignUp form"""
+        raise NotImplementedError
+
+    def update_profile(self, id, fields):
+        db = self.data.ctx.auth_db
+        self.res = db.auth_user(id).update_record(
+            username=fields["username"],
+            email=fields["email"],
+            first_name=fields["first_name"],
+            last_name=fields["last_name"],
+        )
+        if self.res: 
+            rec = db.auth_user(self.res['id'])
+            rec = self.store_user_in_session(self.res)
+        return dict(id=self.res['id'])
 
     def user_for_session(self, user):
         return {"id": user[self.id_field]}
 
     def store_user_in_session(self, user: dict):
         self.data.cuser.store_user_in_session(user)
+        self.data.ctx.state.shared_data['template_context']['l_user'] = user
+            
 
     @property
     def user(self):
@@ -187,6 +205,9 @@ class XAuth(Fixture):
             return (None, AuthErr.CREDENTIALS)
         if self.ban_field and user[self.ban_field]:
             return (None, AuthErr.BANNED)
+        #if password != user['password']:
+        #    print('Password', password, 'User password', user['password'])
+        #    return (None, AuthErr.CREDENTIALS)
         crypt_pw = self.crypt(password)
         if crypt_pw != user['password']:
             return (None, AuthErr.CREDENTIALS)
