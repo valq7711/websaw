@@ -21,7 +21,7 @@ def index(ctx: ctx_):
         redirect(ctx.URL('login'))
     else:
         flash.set('Welcome %s %s you are logged in as Admin' % (user['first_name'], user['last_name']), 'success')
-        redirect(ctx.URL('db_Admin'))    
+        redirect(ctx.URL('db_admin'))    
     return dict(user=user)
 
 @app.route('logout', method=['GET', 'POST'])
