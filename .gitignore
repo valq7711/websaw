@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# session files
+.service/
+
 # C extensions
 *.so
 
@@ -132,3 +135,4 @@ dmypy.json
 .vscode/
 trash*
 websaw/utils/
+apps/.service/service.storage
