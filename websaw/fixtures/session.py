@@ -9,6 +9,7 @@ from ..core import BaseContext
 
 
 class Session(Fixture):
+    token_env_key = "session_token"
 
     # All apps share the same default secret if not specified.
 
@@ -87,7 +88,7 @@ class Session(Fixture):
 
         token_data = (
             request.get_cookie(session_cookie_name)
-            or ctx.ask('env', {}).get("SESSION_TOKEN")
+            or ctx.env.get(self.token_env_key)
         )
 
         # fast exit

@@ -20,6 +20,7 @@ class Local(threading.local):
     state: IContextSate
     in_process: bool
     mixin_data: SimpleNamespace
+    env: Dict
 
 
 class MetaContext(type):
@@ -28,6 +29,7 @@ class MetaContext(type):
         if not bases:
             return super().__new__(cls, name, bases, dct)
 
+        dct['_env'] = dct.pop('env', {})
         new_fixt = {
             k: dct.pop(k) for k, v in {**dct}.items()
             if isinstance(v, Fixture)
@@ -47,6 +49,7 @@ class BaseContext(metaclass=MetaContext):
     __local__ = threading.local()
 
     _fixt: Dict[str, Fixture] = {}  # see metaclass
+    _env: dict  # default env, see metaclass
 
     _fixture_initialize = Fixture.initialize_safe_storage
     _fixture_prepare_for_use = Fixture.prepare_for_use
@@ -65,10 +68,19 @@ class BaseContext(metaclass=MetaContext):
         self._local = Local()
         self._local.in_process = False
         self._local.mixin_data = None
+        self._local.env = None
 
     @property
     def state(self) -> IContextSate:
         return self._local.state
+
+    @property
+    def env(self) -> Dict:
+        return self._local.env
+
+    @env.setter
+    def env(self, env: Dict):
+        self._local.env = env
 
     @property
     def exception(self) -> Optional[Exception]:
@@ -161,6 +173,7 @@ class BaseContext(metaclass=MetaContext):
             exception_stack=[],
             shared_data={}
         )
+        local.env = {**self._env}
         local.in_process = True
         self._fixture_initialize()
 
