@@ -133,7 +133,7 @@ class DefaultApp(BaseApp):
 
 def jsonfy(ctx: BaseContext, dct):
     ctx.response.headers['Content-Type'] = 'application/json'
-    return json.dumps(dct, sort_keys=True, indent=2, ensure_ascii=False)
+    return json.dumps(dct, sort_keys=True, indent=2, ensure_ascii=False, default=str)
 
 
 def _default_exception_handler(ctx: BaseContext, exc):
