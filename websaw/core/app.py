@@ -40,7 +40,7 @@ class BaseApp:
         self.default_config = default_config
         self.default_ctx = default_ctx
         self._registered = {}
-        self._mixins = []
+        self._mixins: List['BaseApp'] = []
 
     def mixin(self, *mixins):
         self._mixins.extend(mixins)
@@ -58,13 +58,12 @@ class BaseApp:
         args = (rule, method, name)
 
         def decorator(h):
-            raw_h = h
             fixt = None
             if isinstance(h, Fixtured):
-                raw_h = h.h
                 fixt = h.fixt
+                h = h.h
             self._register(h, (args, kw), fixt)
-            return raw_h
+            return h
         return decorator
 
     def use(self, *fixt):
@@ -96,7 +95,6 @@ class BaseApp:
         app_data = context.app_data = SimpleNamespace(
             routes=[],
             named_routes={},
-            #app_name=self.reloader.current_import_app,
             **config
         )
         for raw_h, meta, mixin_data in self._iter_registered():
@@ -104,12 +102,14 @@ class BaseApp:
             for route_args, route_kw in meta.routes_args:
                 self._mount_route(context.app_data, h, route_args, route_kw)
 
+        # mount app static
         static_rule, static_h = self.static_registry.make_rule_and_handler(
             f'{app_data.static_base_url}/static', app_data.static_folder, app_data.app_name
         )
         if static_rule is not None:
             self._mount_route(context.app_data, static_h, (static_rule, 'GET', None), {})
 
+        # mount mixins static as /{app_name}/static/{mixin_name}/
         for m in self._mixins:
             m_cfg = m.default_config
             m_name = m_cfg['app_name']
@@ -120,6 +120,7 @@ class BaseApp:
             if static_rule is not None:
                 self._mount_route(context.app_data, static_h, (static_rule, 'GET', None), {})
 
+        # register
         self.reloader.register_app_data(context.app_data)
         context.app_mounted()
         return context
