@@ -52,10 +52,11 @@ class StaticRegistry:
             return None, None
 
         self.register(static_base_url, folder, client_app)
+        static_ver_rex = r'<re((_\d+(\.\d+){2}/)?)>'
         if static_base_url.endswith('static'):
-            static_base_url = fr'{static_base_url}/<re((_\d+(\.\d+){2}/)?)>'
+            static_base_url = f'{static_base_url}/{static_ver_rex}'
         elif '/static/' in static_base_url:
-            static_base_url = static_base_url.replace('/static/', r'/static/<re((_\d+(\.\d+){2}/)?)>', 1)
+            static_base_url = static_base_url.replace('/static/', f'/static/{static_ver_rex}', 1)
         if not static_base_url.endswith(('/', '/)?)>')):
             static_base_url = f'{static_base_url}/'
         rule = f'{static_base_url}<fp.path()>'
