@@ -13,7 +13,7 @@ db = DAL(
 db.define_table(
     "todo",
     Field("info"),
-    Field("counter", default=(lambda: mounted_ctx.session['counter']))
+    Field("counter", default=(lambda: DefaultContext.cctx().session['counter']))
 )
 db.commit()
 
@@ -77,19 +77,5 @@ def uuid(ctx: Context):
     return str(uuid.uuid4())
 
 
-# mounted_ctx could be used as global object to get/store some data
-# e.g. like above:  Field("counter", default=(lambda: mounted_ctx.session['counter']))
-# but it is bad practice
-mounted_ctx: Context = app.mount()
-# instaed of that you can:
-#class DBDefs(Fixture):
-#    def take_on(self, ctx: 'Context'):
-#        db = ctx.db
-#        db.table.field.default = (lambda: ctx.session['counter'])
-#
-#class Context(DefaultContext):
-#     ...
-#     db_defs = DBDefs()
-#
-#@app.use(ctx_.db_defs)
+app.mount()
 

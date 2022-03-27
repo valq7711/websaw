@@ -44,6 +44,8 @@ class MetaContext(type):
 
 class BaseContext(metaclass=MetaContext):
 
+    __local__ = threading.local()
+
     _fixt: Dict[str, Fixture] = {}  # see metaclass
 
     _fixture_initialize = Fixture.initialize_safe_storage
@@ -52,6 +54,10 @@ class BaseContext(metaclass=MetaContext):
     request = globs.request
     response = globs.response
     app_data: Optional[SimpleNamespace] = None
+
+    @classmethod
+    def cctx(cls) -> 'BaseContext':
+        return cls.__local__.current_ctx
 
     def __init__(self):
         self._fixt = {**self._fixt}
@@ -146,6 +152,7 @@ class BaseContext(metaclass=MetaContext):
         [f.app_mounted(self) for f in self._fixt.values()]
 
     def initialize(self):
+        self.__local__.current_ctx = self
         local = self._local
         local.state = SimpleNamespace(
             in_use={},
