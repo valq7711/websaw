@@ -71,8 +71,12 @@ class Session(Fixture):
             data_in_cookie = False
 
         session_cookie_name = self.get_session_cookie_name(ctx.app_data)
-        # FIXME
-        secure = request.url.startswith("https")
+
+        env_get = request.environ.get
+        secure = "https" == (
+            env_get('HTTP_X_FORWARDED_PROTO') or env_get('wsgi.url_scheme')
+        )
+
         self.initialize(
             request=request,
             response=ctx.response,
@@ -81,18 +85,20 @@ class Session(Fixture):
             storage=storage
         )
 
-        raw_token = (
+        token_data = (
             request.get_cookie(session_cookie_name)
-            or ctx.env.get("SESSION_TOKEN")
+            or ctx.ask('env', {}).get("SESSION_TOKEN")
         )
 
         # fast exit
-        if not raw_token:
+        if not token_data:
             return
 
-        token_data = raw_token.encode()
+        if isinstance(token_data, str):
+            token_data = token_data.encode()
+
         data = None
-        if storage:
+        if storage is not None:
             json_data = storage.get(token_data)
             if json_data:
                 try:
@@ -192,4 +198,3 @@ class GroupSession(Session):
     @staticmethod
     def get_session_cookie_name(app_data):
         return f'{app_data.group_name}_session'
-
