@@ -1,7 +1,9 @@
 from websaw import DefaultApp, DefaultContext
-from websaw.core import Fixture
+from websaw.fixtures import Env
+
 
 class Context(DefaultContext):
+    env = {'mixin_env': 'mixin env is not mixed-in since it is not secure'}
     ...
 
 
@@ -35,4 +37,5 @@ def info_app(ctx: Context):
     ret = {
         k: rep(v) for k, v in ctx.app_data.__dict__.items()
     }
+    ret['env'] = ctx.env
     return ret

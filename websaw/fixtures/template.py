@@ -42,7 +42,7 @@ class Template(Fixture):
             **shared_data.get("template_context", {}),
             **output,
         )
-        path = self.path or ctx.app_data.template_folder
+        path = self.path or ctx.env.get('template_folder') or ctx.app_data.template_folder
         filename = path_join(path, self.filename)
         if not os.path.exists(filename):
             generic_filename = path_join(path, "generic.html")

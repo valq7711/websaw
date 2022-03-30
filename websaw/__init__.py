@@ -35,6 +35,7 @@ from .fixtures import (
     AuthGuard,
     AuthErr,
     CurrentUser,
+    Env,
 )
 
 from pydal import Field
@@ -66,6 +67,8 @@ __all__ = (
     'AuthGuard',
     'AuthErr',
     'CurrentUser',
+
+    'Env',
 )
 
 __author__ = "Kucherov Valery <valq7711@gmail.com>"
