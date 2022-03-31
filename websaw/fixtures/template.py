@@ -19,6 +19,7 @@ class Template(Fixture):
         else:
             context_key = None
         self.context_key = context_key
+        self.with_path_prefix = '/' in filename
         self.filename = filename
         self.path = path
         self.delimiters = delimiters
@@ -38,16 +39,21 @@ class Template(Fixture):
             app_get=ctx.get,
             mixin_get=ctx.mixin_get,
             __vars__=output,
+            env=ctx.env,
             **self.inject,
             **shared_data.get("template_context", {}),
             **output,
         )
-        path = self.path or ctx.env.get('template_folder') or ctx.app_data.template_folder
-        filename = path_join(path, self.filename)
-        if not os.path.exists(filename):
-            generic_filename = path_join(path, "generic.html")
-            if os.path.exists(generic_filename):
-                filename = generic_filename
+        if self.with_path_prefix:
+            file_path = self.filename.format(**ctx.env)
+            path, filename = os.path.split(file_path)
+        else:
+            filename = self.filename
+            path = self.path or ctx.app_data.template_folder
+            file_path = path_join(path, filename)
+
+        if not os.path.exists(file_path):
+            raise RuntimeError(f'Template was not found: {file_path}')
         ctx.output = render(
             filename=filename, path=path, context=context, delimiters=self.delimiters
         )

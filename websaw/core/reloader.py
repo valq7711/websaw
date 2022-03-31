@@ -37,6 +37,15 @@ class Reloader:
         return os.environ["WEBSAW_APPS_FOLDER"]
 
     @classmethod
+    def package_folder(cls, package_name):
+        name_split = package_name.split('.', 1)
+        return os.path.join(cls.get_apps_folder(), name_split[-1])
+
+    @classmethod
+    def package_folder_path(cls, package_name, *parts):
+        return os.path.join(cls.package_folder(package_name), *parts)
+
+    @classmethod
     def register_app_data(cls, app_data):
         app_lst = cls.apps_data.setdefault(cls.current_import_app, [])
         app_lst.append(app_data)

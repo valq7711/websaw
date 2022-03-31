@@ -1,4 +1,6 @@
-from websaw import DefaultApp, DefaultContext, Template
+import os
+
+from websaw import DefaultApp, DefaultContext, Template, Reloader
 from websaw.core import Fixture
 from websaw.fixtures import Env
 import ombott
@@ -23,7 +25,8 @@ class Context(info.Context, DefaultContext):
     track_visited = LastVisited()
     welcome_templ_overwrite = Template('welcome.html')
     env = {
-        'foo': 'foo_value'
+        'foo': 'foo_value',
+        'templ_dir': Reloader.package_folder_path(__package__, 'templates')
     }
 
 
