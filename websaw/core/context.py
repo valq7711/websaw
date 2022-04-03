@@ -1,6 +1,6 @@
 import threading
 from types import SimpleNamespace
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Union
 
 from .exceptions import FixtureProcessError
 from . import globs
@@ -11,6 +11,7 @@ class IContextSate:
 
     in_use: Dict[str, Fixture]
     in_use_stack: List[Fixture]
+    uninitialized_hooks_in_stack: set
     output: Any
     exception_stack: List[Exception]
     shared_data: dict
@@ -123,21 +124,39 @@ class BaseContext(metaclass=MetaContext):
             return self._fixt[k]
         state = local.state
         in_use = state.in_use
-        f = in_use.get(k)
-        if f is None:
+        fixt_value = in_use.get(k)
+        if fixt_value is None:
             try:
-                f = self._fixt[k]
+                fixt = self._fixt[k]
             except KeyError:
                 raise AttributeError(f'{k}')
-            self._fixture_prepare_for_use(f)
+            self._fixture_prepare_for_use(fixt)
             try:
-                f.take_on(self)
+                value = fixt.take_on(self)
             except Exception as exc:
                 state.exception_stack.append(exc)
                 raise FixtureProcessError()
-            in_use[k] = f
-            state.in_use_stack.append(f)
-        return f
+            if value is None:
+                value = fixt
+            in_use[k] = (fixt, value)
+            if fixt.is_hook:
+                if k in state.uninitialized_hooks_in_stack:
+                    # this is an edge case:
+                    # there were some errors while processing fixtures from app.use()
+                    # that happened before the hook was taken on.
+                    # So the hook in in_use_stack, but it was not initialized,
+                    # but now someone touches it via context.<hook>
+                    # so we should reoder it in in_use_stack
+                    state.in_use_stack.remove(fixt)
+                    state.in_use_stack.append(fixt)
+                    state.uninitialized_hooks_in_stack.pop(k)
+                else:
+                    state.in_use_stack.append(fixt)
+            else:
+                state.in_use_stack.append(fixt)
+        else:
+            value = fixt_value[1]
+        return value
 
     def get_or_make_fixture_key(self, f) -> str:
         key = self._reverse_map.get(f)
@@ -152,6 +171,7 @@ class BaseContext(metaclass=MetaContext):
     def clone(self, app_data=None):
         ret = self.__class__()
         ret._fixt = {**self._fixt}
+        ret._reverse_map = {**self._reverse_map}
         ret.app_data = app_data
         return ret
 
@@ -159,6 +179,8 @@ class BaseContext(metaclass=MetaContext):
         fixt = {}
         [fixt.update(m._fixt) for m in reversed(mixins)]
         [self._fixt.setdefault(k, f) for k, f in fixt.items()]
+        # rebuild reverse map
+        self._reverse_map = {f: k for k, f in self._fixt.items()}
 
     def app_mounted(self):
         [f.app_mounted(self) for f in self._fixt.values()]
@@ -169,6 +191,7 @@ class BaseContext(metaclass=MetaContext):
         local.state = SimpleNamespace(
             in_use={},
             in_use_stack=[],
+            uninitialized_hooks_in_stack=set(),
             output=None,
             exception_stack=[],
             shared_data={}
@@ -177,13 +200,20 @@ class BaseContext(metaclass=MetaContext):
         local.in_process = True
         self._fixture_initialize()
 
-    def use_fixtures(self, fixt, hooks=False):
-        try:
-            [getattr(self, f) for f in fixt]
-        except Exception:
-            if hooks:
-                self._local.state.in_use.update(hooks)
-            raise
+    def use_fixtures(self, fixt, hooks: Union[bool, dict] = False):
+        if hooks:
+            try:
+                for fkey in fixt:
+                    getattr(self, fkey)
+                    hooks.pop(fkey, None)
+            except Exception:
+                if hooks:
+                    state = self._local.state
+                    state.in_use_stack.extend(hooks.values())
+                    state.uninitialized_hooks_in_stack.update(hooks)
+                raise
+        else:
+            [getattr(self, fkey) for fkey in fixt]
 
     def finalize(self, exc):
         state = self._local.state
@@ -191,7 +221,9 @@ class BaseContext(metaclass=MetaContext):
             state.exception_stack.append(exc)
 
         max_cnt = 100
+        in_use = state.in_use
         in_use_stack = state.in_use_stack
+
         err = None
         while max_cnt > 0:
             max_cnt -= 1
@@ -202,6 +234,7 @@ class BaseContext(metaclass=MetaContext):
                 f.take_off(self)
             except Exception as exc:
                 state.exception_stack.append(exc)
+            in_use[self._reverse_map[f]] = None
         else:
             err = RuntimeError('Max number of iterations exceeded')
         self._local.in_process = False
