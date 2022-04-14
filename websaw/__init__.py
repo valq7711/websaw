@@ -100,12 +100,12 @@ class DefaultApp(BaseApp):
                 raise ValueError(
                     f"{self.__class__} can't be directly instantiated without 'name' argument"
                 )
-            name = self.__module__
+            name = self.__package__
         name_split = name.split('.')
         app_name = name_split[-1]
 
         pjoin = os.path.join
-        folder = pjoin(Reloader.get_apps_folder(), *name_split[1:])
+        folder = Reloader.package_folder(name)
         static_folder = pjoin(folder, 'static')
         template_folder = pjoin(folder, 'templates')
 

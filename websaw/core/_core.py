@@ -1,13 +1,10 @@
-import ombott
-import logging
+import sys
+import os
 
 from . import globs
 from .core_events import core_event_bus, CoreEvents
-from ..error_pages import error_page
 from .install import install_args
 from .reloader import Reloader
-from .loggers import get_error_snapshot, error_logger
-from .exceptions import HTTP
 
 
 __all__ = (
@@ -17,9 +14,16 @@ __all__ = (
 )
 
 
-def import_apps():
+def import_apps(pyjsaw_installed):
     core_event_bus.emit(CoreEvents.BEFORE_APPS_LOAD)
+
     Reloader.import_apps()
+    if pyjsaw_installed is not None:
+        if 'pyjsaw' in Reloader.modules:
+            Reloader.forget_package(pyjsaw_installed)
+        else:
+            pyjsaw_installed.websaw_main()
+
     core_event_bus.emit(CoreEvents.APPS_LOADED)
 
 
@@ -32,7 +36,9 @@ def reload_apps(*app_names):
 def wsgi(**kwargs):
     """Initializes everything, loads apps, returns the wsgi app"""
     install_args(kwargs)
-    import_apps()
-    # ICECUBE.update(threadsafevariable.ThreadSafeVariable.freeze())
+    try:
+        import pyjsaw
+    except ImportError:
+        pyjsaw = None
+    import_apps(pyjsaw)
     return globs.app
-
