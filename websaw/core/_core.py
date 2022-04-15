@@ -20,7 +20,9 @@ def import_apps(pyjsaw_installed):
     Reloader.import_apps()
     if pyjsaw_installed is not None:
         if 'pyjsaw' in Reloader.modules:
-            Reloader.forget_package(pyjsaw_installed)
+            # we have apps/pyjsaw
+            # forget pyjsaw_installed
+            Reloader.forget_package('pyjsaw')
         else:
             pyjsaw_installed.websaw_main()
 
