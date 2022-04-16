@@ -138,15 +138,19 @@ class Session(Fixture):
 
     def save(self):
         local = self.data
+        data = local.data
         response = local.response
-        local.data["timestamp"] = time.time()
-        local.data["session_cookie_name"] = local.session_cookie_name
-        if local.storage:
-            cookie_data = local.data["uuid"]
-            local.storage.set(cookie_data, json.dumps(local.data), self.expiration)
+        data["timestamp"] = time.time()
+        data["session_cookie_name"] = local.session_cookie_name
+        data["secure"] = local.secure
+        if "uuid" not in data:
+            data["uuid"] = str(uuid.uuid1())
+        if local.storage is not None:
+            cookie_data = data["uuid"]
+            local.storage.set(cookie_data, json.dumps(data), self.expiration)
         else:
             cookie_data = jwt.encode(
-                local.data, self.secret, algorithm=self.algorithm
+                data, self.secret, algorithm=self.algorithm
             )
             if isinstance(cookie_data, bytes):
                 cookie_data = cookie_data.decode()
