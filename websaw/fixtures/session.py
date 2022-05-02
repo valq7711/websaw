@@ -9,6 +9,7 @@ from ..core import BaseContext
 
 
 class Session(Fixture):
+    token_env_key = "session_token"
 
     # All apps share the same default secret if not specified.
 
@@ -28,7 +29,7 @@ class Session(Fixture):
         and its uuid key is stored in the cookie
         """
         self.secret = secret  # see app_mounted
-        self.expiration = expiration
+        self.expiration = int(expiration) if expiration is not None else None
         self.algorithm = algorithm
         self.storage = storage
         self.same_site = same_site
@@ -63,68 +64,93 @@ class Session(Fixture):
     def load(self, ctx: BaseContext):
         request = ctx.request
         storage = None
+        data_in_cookie = True
         if self.storage:
             storage = ctx.ask(self.storage)
             if storage is None:
                 raise KeyError(f'Storage is not provided by context: {self.storage}')
+            data_in_cookie = False
+
+        session_cookie_name = self.get_session_cookie_name(ctx.app_data)
+
+        env_get = request.environ.get
+        secure = "https" == (
+            env_get('HTTP_X_FORWARDED_PROTO') or env_get('wsgi.url_scheme')
+        )
 
         self.initialize(
             request=request,
             response=ctx.response,
-            session_cookie_name=self.get_session_cookie_name(ctx.app_data),
-            secure=request.url.startswith("https"),  # FIXME
+            session_cookie_name=session_cookie_name,
+            secure=secure,
             storage=storage
         )
 
-        local = self.data
-        raw_token = (
-            request.get_cookie(local.session_cookie_name)
-            or request.query.get("_session_token")
+        token_data = (
+            request.get_cookie(session_cookie_name)
+            or ctx.env.get(self.token_env_key)
         )
-        if not raw_token and request.method in {"POST", "PUT", "DELETE", "PATCH"}:
-            raw_token = (
-                request.forms and request.forms.get("_session_token")
-                or request.json and request.json.get("_session_token")
-            )
-        if raw_token:
-            token_data = raw_token.encode()
+
+        # fast exit
+        if not token_data:
+            return
+
+        if isinstance(token_data, str):
+            token_data = token_data.encode()
+
+        data = None
+        if storage is not None:
+            json_data = storage.get(token_data)
+            if json_data:
+                try:
+                    data = json.loads(json_data)
+                except json.JSONDecodeError:
+                    pass
+        else:
             try:
-                if storage:
-                    json_data = storage.get(token_data)
-                    if json_data:
-                        local.data = json.loads(json_data)
-                else:
-                    local.data = jwt.decode(
-                        token_data, self.secret, algorithms=[self.algorithm]
-                    )
-                if self.expiration is not None and storage is None:
-                    assert (
-                        local.data["timestamp"] > time.time() - int(self.expiration)
-                    )
-                assert self.get_data().get("secure") == local.secure
-            except Exception:
+                data = jwt.decode(
+                    token_data, self.secret, algorithms=[self.algorithm]
+                )
+            except jwt.PyJWTError:
                 pass
 
-        if (
-            local.session_cookie_name != local.data.get("session_cookie_name")
-            or "uuid" not in self.get_data()
-        ):
+        if data is None:
+            return
+
+        is_valid = True
+
+        if session_cookie_name != data.get("session_cookie_name"):
+            is_valid = False
+        if is_valid and "uuid" not in data:
+            is_valid = False
+        if is_valid and data_in_cookie and self.expiration is not None:
+            is_valid = self.expiration > time.time() - data.get("timestamp", 0)
+        if is_valid and secure is not data.get("secure"):
+            is_valid = False
+
+        if not is_valid:
             self.clear()
+        else:
+            self.data.data = data
 
     def get_data(self):
         return self.data.data
 
     def save(self):
         local = self.data
+        data = local.data
         response = local.response
-        local.data["timestamp"] = time.time()
-        local.data["session_cookie_name"] = local.session_cookie_name
-        if local.storage:
-            cookie_data = local.data["uuid"]
-            local.storage.set(cookie_data, json.dumps(local.data), self.expiration)
+        data["timestamp"] = time.time()
+        data["session_cookie_name"] = local.session_cookie_name
+        data["secure"] = local.secure
+        if "uuid" not in data:
+            data["uuid"] = str(uuid.uuid1())
+        if local.storage is not None:
+            cookie_data = data["uuid"]
+            local.storage.set(cookie_data, json.dumps(data), self.expiration)
         else:
             cookie_data = jwt.encode(
-                local.data, self.secret, algorithm=self.algorithm
+                data, self.secret, algorithm=self.algorithm
             )
             if isinstance(cookie_data, bytes):
                 cookie_data = cookie_data.decode()
@@ -138,13 +164,13 @@ class Session(Fixture):
         )
 
     def get(self, key, default=None):
-        return self.get_data().get(key, default)
+        return self.data.data.get(key, default)
 
     def __getitem__(self, key):
-        return self.get_data()[key]
+        return self.data.data[key]
 
     def __delitem__(self, key):
-        data = self.get_data()
+        data = self.data.data
         if key in data:
             self.data.changed = True
             del data[key]
@@ -177,4 +203,3 @@ class GroupSession(Session):
     @staticmethod
     def get_session_cookie_name(app_data):
         return f'{app_data.group_name}_session'
-

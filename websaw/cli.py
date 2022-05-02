@@ -25,6 +25,8 @@ except ImportError:
 from .core.install import install_args
 from .core import import_apps
 from . import server_adapters
+from .core import globs
+from .core.reloader import Reloader
 
 
 WEBSAW_CMD = sys.argv[0]
@@ -47,6 +49,9 @@ __ssl__ = __import__("ssl")
 _ssl = getattr(__ssl__, "_ssl") or getattr(__ssl__, "_ssl2")
 
 
+
+
+
 def keyboardInterruptHandler(signal, frame):
     """Catch interrupts like Ctrl-C"""
     click.echo(
@@ -57,28 +62,10 @@ def keyboardInterruptHandler(signal, frame):
 
 @click.group(
     context_settings=dict(help_option_names=["-h", "-help", "--help"]),
-    help='%s\n\nType "%s COMMAND -h" for available options on commands'
-    % (__doc__, WEBSAW_CMD),
+    help=f'{__doc__}\n\nType "{WEBSAW_CMD} COMMAND -h" for available options on commands'
 )
 def cli():
     pass
-
-
-@cli.command()
-@click.option(
-    "-a", "--all", is_flag=True, default=False, help="List version of all modules"
-)
-def version(all):
-    """Show versions and exit"""
-    from . import __version__
-
-    click.echo("websaw: %s" % __version__)
-    if all:
-        click.echo("system: %s" % platform.platform())
-        click.echo("python: %s" % sys.version.replace("\n", " "))
-        for name in sorted(sys.modules):
-            if hasattr(sys.modules[name], "__version__"):
-                click.echo("%s: %s" % (name, sys.modules[name].__version__))
 
 
 @cli.command()
@@ -94,22 +81,6 @@ def version(all):
 def setup(**kwargs):
     """Setup new apps folder or reinstall it"""
     install_args(kwargs, reinstall_apps=True)
-
-
-@cli.command()
-@click.argument("apps_folder", type=click.Path(exists=True))
-@click.option(
-    "-Y",
-    "--yes",
-    is_flag=True,
-    default=False,
-    help="No prompt, assume yes to questions",
-    show_default=True,
-)
-def shell(**kwargs):
-    """Open a python shell with apps_folder's parent added to the path"""
-    install_args(kwargs)
-    code.interact(local=dict(globals(), **locals()))
 
 
 @cli.command()
@@ -156,7 +127,7 @@ def call(apps_folder, func, yes, args):
     show_default=True,
 )
 def set_password(password, password_file):
-    """Set administrator's password for the Dashboard"""
+    """Set administrator's password"""
     click.echo('Storing the hashed password in file "%s"\n' % password_file)
     with open(password_file, "w") as fp:
         fp.write(str(pydal.validators.CRYPT()(password)[0]))
@@ -241,9 +212,9 @@ def new_app(apps_folder, app_name, yes, scaffold_zip):
 )
 @click.option(
     "-d",
-    "--dashboard_mode",
+    "--admin_mode",
     default="full",
-    help="Dashboard mode: demo, readonly, full, none",
+    help="Admin mode: demo, readonly, full, none",
     show_default=True,
 )
 @click.option(
@@ -267,23 +238,27 @@ def run(**kwargs):
     click.echo("Websaw: %s on Python %s\n\n" % (__version__, sys.version))
 
     # If we know where the password is stored, read it, otherwise ask for one
-    if os.path.exists(os.path.join(os.environ["WEBSAW_APPS_FOLDER"], "_dashboard")):
-        if (
-            kwargs["dashboard_mode"] not in ("demo", "none")
-            and not os.path.exists(kwargs["password_file"])
-        ):
+    try:
+        import pyjsaw
+        click.echo(f"Found pyjsaw {pyjsaw.__version__} installed!")
+    except ImportError:
+        pyjsaw = None
+
+    pyjsaw_installed = pyjsaw is not None or os.path.exists(os.path.join(globs.current_config.apps_folder, "pyjsaw"))
+    if pyjsaw_installed:
+        if not (kwargs["admin_mode"] in ("full", "readonly") and Reloader.read_password_hash() is not None):
             click.echo(
-                'You have not set a dashboard password. Run "%s set_password" to do so.'
+                'You have not set an admin password. Run "%s set_password" to do so.'
                 % WEBSAW_CMD
             )
         else:
             click.echo(
-                "Dashboard is at: http://%s:%s/_dashboard"
+                "Pyjsaw is at: http://%s:%s/pyjsaw"
                 % (kwargs["host"], kwargs["port"])
             )
 
     # Start
-    import_apps()
+    import_apps(pyjsaw)
     start_server(kwargs)
 
 

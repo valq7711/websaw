@@ -14,12 +14,11 @@ from .static_registry import static_registry
 from .core_events import core_event_bus, CoreEvents
 
 
-def _clear_modules(module_name):
+def _clear_modules(pckg_name):
     # all files/submodules
     names = [
-        name
-        for name in sys.modules
-        if (name + ".").startswith(module_name + ".")
+        name for name in sys.modules
+        if (name + ".").startswith(pckg_name + ".")
     ]
     for name in names:
         del sys.modules[name]
@@ -31,10 +30,29 @@ class Reloader:
     errors = {}
     apps_data: Dict[str, list] = {}
     current_import_app: str
+    forget_package = staticmethod(_clear_modules)
+
+    @staticmethod
+    def read_password_hash():
+        """Read admin password hash from WEBSAW_PASSWORD_FILE if exists one."""
+        pwf = os.environ["WEBSAW_PASSWORD_FILE"]
+        if os.path.exists(pwf):
+            with open(pwf, 'r') as f:
+                hash = f.read().strip()
+            return hash
 
     @staticmethod
     def get_apps_folder():
         return os.environ["WEBSAW_APPS_FOLDER"]
+
+    @classmethod
+    def package_folder(cls, package_name):
+        pdir = os.path.dirname(sys.modules[package_name].__file__)
+        return pdir
+
+    @classmethod
+    def package_folder_path(cls, package_name, *parts):
+        return os.path.join(cls.package_folder(package_name), *parts)
 
     @classmethod
     def register_app_data(cls, app_data):
@@ -85,7 +103,7 @@ class Reloader:
             return
         apps = cls.expand_apps_to_reload(*apps)
         for app in apps:
-            _clear_modules(f"apps.{app}")
+            cls.forget_package(f"apps.{app}")
             cls.clear_routes(app)
         for app in apps:
             cls.import_app(app, clear_before_import=False)
@@ -105,14 +123,14 @@ class Reloader:
             cls.import_app(app_name, clear_before_import=False)
 
     @classmethod
-    def import_app(cls, app_name, clear_before_import=True):
+    def import_app(cls, app_name: str, clear_before_import=True):
         folder = cls.get_apps_folder()
         path = os.path.join(folder, app_name)
         init = os.path.join(path, "__init__.py")
 
         if not (
-            os.path.isdir(path)
-            and not path.endswith("__")
+            not app_name.startswith("__")
+            and os.path.isdir(path)
             and os.path.exists(init)
         ):
             return
@@ -142,6 +160,8 @@ class Reloader:
                 module = importlib.machinery.SourceFileLoader(
                     module_name, init
                 ).load_module()
+                if hasattr(module, 'websaw_main'):
+                    module.websaw_main()
                 click.secho(f"\x1b[A[X] loaded {app_name}       ", fg="green")
             cls.modules[app_name] = module
             cls.errors[app_name] = None
@@ -155,7 +175,7 @@ class Reloader:
                 fg="red",
             )
             # clear all files/submodules if the loading fails
-            _clear_modules(module_name)
+            cls.forget_package(module_name)
             return None
 
     @staticmethod

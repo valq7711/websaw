@@ -35,6 +35,7 @@ from .fixtures import (
     AuthGuard,
     AuthErr,
     CurrentUser,
+    Env,
 )
 
 from pydal import Field
@@ -66,11 +67,13 @@ __all__ = (
     'AuthGuard',
     'AuthErr',
     'CurrentUser',
+
+    'Env',
 )
 
 __author__ = "Kucherov Valery <valq7711@gmail.com>"
 __license__ = "MIT"
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 
 def _maybe_gevent():
@@ -97,12 +100,12 @@ class DefaultApp(BaseApp):
                 raise ValueError(
                     f"{self.__class__} can't be directly instantiated without 'name' argument"
                 )
-            name = self.__module__
+            name = self.__package__
         name_split = name.split('.')
         app_name = name_split[-1]
 
         pjoin = os.path.join
-        folder = pjoin(Reloader.get_apps_folder(), *name_split[1:])
+        folder = Reloader.package_folder(name)
         static_folder = pjoin(folder, 'static')
         template_folder = pjoin(folder, 'templates')
 
