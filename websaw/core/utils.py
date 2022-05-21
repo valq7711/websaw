@@ -74,14 +74,13 @@ def safely(func, exceptions=(Exception,), log=False, default=None):
         return default() if callable(default) else default
 
 
-def module2filename(module):
-    filename = os.path.join(*module.split(".")[1:])
-    filename = (
-        os.path.join(filename, "__init__.py")
-        if not filename.count(os.sep)
-        else filename + ".py"
-    )
-    return filename
+def module2filename(module_name, base_path=None):
+    fp = sys.modules[module_name].__file__
+    if base_path:
+        base_path = f'{base_path.rstrip(os.sep)}{os.sep}'
+        if fp.startswith(base_path):
+            fp = fp[len(base_path):]
+    return fp
 
 
 ########################################################################################

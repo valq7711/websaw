@@ -47,18 +47,19 @@ def app_watch_handler(watched_app_subpaths):
 
 
 def try_app_watch_tasks():
-    if APP_WATCH["tasks"]:
-        tried_tasks = []
-        for handler in APP_WATCH["tasks"]:
-            changed_files_dict = APP_WATCH["tasks"][handler]
-            try:
-                APP_WATCH["handlers"][handler](changed_files_dict.keys())
-                tried_tasks.append(handler)
-            except Exception:
-                logging.error(traceback.format_exc())
-        ## remove executed tasks from register
-        for handler in tried_tasks:
-            del APP_WATCH["tasks"][handler]
+    if not APP_WATCH["tasks"]:
+        return
+    tried_tasks = []
+    for handler in APP_WATCH["tasks"]:
+        changed_files_dict = APP_WATCH["tasks"][handler]
+        try:
+            APP_WATCH["handlers"][handler](changed_files_dict.keys())
+            tried_tasks.append(handler)
+        except Exception:
+            logging.error(traceback.format_exc())
+    ## remove executed tasks from register
+    for handler in tried_tasks:
+        del APP_WATCH["tasks"][handler]
 
 
 def watch(apps_folder, server_config, mode="sync"):
@@ -73,11 +74,11 @@ def watch(apps_folder, server_config, mode="sync"):
         )
         try:
             async for changes in awatch(os.path.join(apps_folder)):
-                apps = []
+                apps = set()
                 for subpath in [pathlib.Path(pair[1]) for pair in changes]:
                     name = subpath.relative_to(apps_folder).parts[0]
                     if subpath.suffix == ".py":
-                        apps.append(name)
+                        apps.add(name)
                     ## manage `app_watch_handler` decorators
                     elif subpath.as_posix() in APP_WATCH["files"]:
                         handlers = APP_WATCH["files"][subpath.as_posix()]
@@ -89,7 +90,8 @@ def watch(apps_folder, server_config, mode="sync"):
                 if mode == "lazy":
                     DIRTY_APPS.update(apps)
                 else:
-                    core_event_bus.emit(CoreEvents.RELOAD_APPS, *apps)
+                    if apps:
+                        core_event_bus.emit(CoreEvents.RELOAD_APPS, *apps)
                     try_app_watch_tasks()
         except RuntimeError as exc:
             if str(exc).endswith('after shutdown'):
@@ -114,6 +116,7 @@ def watch(apps_folder, server_config, mode="sync"):
 
 
 def lazy_trigger(*a, **kw):
-    core_event_bus.emit(CoreEvents.RELOAD_APPS, *DIRTY_APPS)
-    DIRTY_APPS.clear()
+    if DIRTY_APPS:
+        core_event_bus.emit(CoreEvents.RELOAD_APPS, *DIRTY_APPS)
+        DIRTY_APPS.clear()
     try_app_watch_tasks()
