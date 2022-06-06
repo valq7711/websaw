@@ -109,6 +109,7 @@ class DefaultApp(BaseApp):
         folder = Reloader.package_folder(name)
         static_folder = pjoin(folder, 'static')
         template_folder = pjoin(folder, 'templates')
+        spa_template_folder = pjoin(static_folder, 'spa')
 
         cfg = dict(
             app_name=app_name,
@@ -117,6 +118,7 @@ class DefaultApp(BaseApp):
             folder=folder,
             static_folder=static_folder,
             template_folder=template_folder,
+            spa_template_folder=spa_template_folder,
             render_map={dict: jsonfy},
             exception_handler=_default_exception_handler,
             group_name=None,
@@ -138,6 +140,13 @@ class DefaultApp(BaseApp):
                 fx = UTemplate(fx)
             fixtures.append(fx)
         return super().use(*fixtures)
+
+    @staticmethod
+    def _str_to_template(templ: str, app_name: str):
+        if '#' in templ:
+            templ = templ.replace('#', '')
+            return SPAComponent(templ)
+        return Template(templ, inject={'mixin_name': app_name})
 
 
 def jsonfy(ctx: BaseContext, dct):
