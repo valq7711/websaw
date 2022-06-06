@@ -3,8 +3,8 @@ import os
 import yatl
 from upytl import UPYTL
 
-from ..core import Cache, render, BaseContext
-from ..core.fixture import Fixture
+from ..core import Cache, render, BaseContext, redirect
+from ..core.fixture import Fixture, SPAFixture
 
 
 _HELPERS = {name: getattr(yatl.helpers, name) for name in yatl.helpers.__all__}
