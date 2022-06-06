@@ -15,7 +15,7 @@ from .utils import (
 from .reloader import Reloader
 from .app import BaseApp
 from .context import BaseContext
-from .fixture import Fixture
+from .fixture import Fixture, SPAFixture
 
 from .render import render
 
@@ -36,6 +36,7 @@ __all__ = (
     'BaseContext',
     'BaseApp',
     'Fixture',
+    'SPAFixture',
 
     # 'URL',
     'redirect',

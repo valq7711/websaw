@@ -28,6 +28,7 @@ from .core import (
 
 from .fixtures import (
     Template,
+    SPAComponent,
     Session, GroupSession,
     DAL,
     URL,
@@ -56,6 +57,7 @@ __all__ = (
     'Cache',
 
     'Template',
+    'SPAComponent',
     'Session', 'GroupSession',
     'DAL',
     'Field',
@@ -108,6 +110,7 @@ class DefaultApp(BaseApp):
         folder = Reloader.package_folder(name)
         static_folder = pjoin(folder, 'static')
         template_folder = pjoin(folder, 'templates')
+        spa_template_folder = pjoin(static_folder, 'spa')
 
         cfg = dict(
             app_name=app_name,
@@ -116,6 +119,7 @@ class DefaultApp(BaseApp):
             folder=folder,
             static_folder=static_folder,
             template_folder=template_folder,
+            spa_template_folder=spa_template_folder,
             render_map={dict: jsonfy},
             exception_handler=_default_exception_handler,
             group_name=None,
@@ -128,10 +132,16 @@ class DefaultApp(BaseApp):
     def use(self, *fixt):
         app_name = self.default_config['app_name']
         return super().use(*[
-            Template(f, path=self.default_config['template_folder'], inject={'mixin_name': app_name})
-            if isinstance(f, str) else f
+            self._str_to_template(f, app_name) if isinstance(f, str) else f
             for f in fixt
         ])
+
+    @staticmethod
+    def _str_to_template(templ: str, app_name: str):
+        if '#' in templ:
+            templ = templ.replace('#', '')
+            return SPAComponent(templ)
+        return Template(templ, inject={'mixin_name': app_name})
 
 
 def jsonfy(ctx: BaseContext, dct):

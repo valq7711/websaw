@@ -69,3 +69,9 @@ class Fixture:
         This hook is for cleanup/tear down action (e.g. to close a file or db-connection)
         """
         ...
+
+
+class SPAFixture(Fixture):
+    def make_component_reference(self, ctx, prefix):
+        pass
+
