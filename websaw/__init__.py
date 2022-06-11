@@ -110,7 +110,7 @@ class DefaultApp(BaseApp):
         folder = Reloader.package_folder(name)
         static_folder = pjoin(folder, 'static')
         template_folder = pjoin(folder, 'templates')
-        spa_template_folder = pjoin(static_folder, 'spa')
+        spa_template_folder = pjoin(static_folder, 'spa', 'pages')
 
         cfg = dict(
             app_name=app_name,
@@ -120,7 +120,7 @@ class DefaultApp(BaseApp):
             static_folder=static_folder,
             template_folder=template_folder,
             spa_template_folder=spa_template_folder,
-            render_map={dict: jsonfy},
+            render_map={dict: jsonfy, BaseApp.SPAResponse: spa_response},
             exception_handler=_default_exception_handler,
             group_name=None,
         )
@@ -147,6 +147,12 @@ class DefaultApp(BaseApp):
 def jsonfy(ctx: BaseContext, dct):
     ctx.response.headers['Content-Type'] = 'application/json'
     return json.dumps(dct, sort_keys=True, indent=2, ensure_ascii=False, default=str)
+
+
+def spa_response(ctx: BaseContext, dct):
+    ret = jsonfy(ctx, dct)
+    ctx.response.headers['X-SPAResponse'] = True
+    return ret
 
 
 def _default_exception_handler(ctx: BaseContext, exc):
