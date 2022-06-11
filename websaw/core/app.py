@@ -29,12 +29,37 @@ class Fixtured:
         return self.h(*a, **kw)
 
 
+class SPAPath(dict):
+    path: str
+    is_main_path: bool
+
+    def __init__(self, path):
+        obj = {
+            'path': path,
+            'is_main_path': False,
+        }
+        super().__init__(obj)
+
+    __setattr__ = dict.__setitem__
+
+    def __getattr__(self, k):
+        try:
+            return self[k]
+        except KeyError:
+            raise AttributeError(k)
+
+
+class SPAResponse(dict):
+    pass
+
+
 class BaseApp:
 
     static_registry = StaticRegistry
     add_route = staticmethod(globs.app.add_route)
     remove_route = staticmethod(globs.app.router.remove)
     reloader = Reloader
+    SPAResponse = SPAResponse
 
     def __init__(
             self,
@@ -116,15 +141,21 @@ class BaseApp:
                 spa_component = spa_component.make_component_reference(context, prefix)
             for route_args, route_kw in meta.routes_args:
                 spa: SPA = route_kw.pop('spa', None)
+                route_spa_main_args = None
                 if spa:
                     if spa_component:
                         spa_component_routes: dict = app_data.spa_routes.setdefault(spa.name, {})
                         spa_routes: list = spa_component_routes.setdefault(spa_component, [])
-                        # collect only rules
-                        spa_routes.append(route_args[0])
+                        spa_path = SPAPath(route_args[0])
+                        if spa_path.path == spa.main_path:
+                            spa_path.is_main_path = True
+                            route_spa_main_args = [f'pages-api/{spa.name}', *route_args[1:]]
+                        spa_routes.append(spa_path)
                     # prefix all spa routes with 'spa-pages-api/<spa_name>'
                     route_args = [f'pages-api/{spa.name}/{route_args[0]}', *route_args[1:]]
                 self._mount_route(h, route_args, route_kw)
+                if route_spa_main_args:
+                    self._mount_route(h, route_spa_main_args, route_kw)
 
         # make static/spa_routes.js
         # 'redirect' all spa-routes to 'index'
@@ -172,7 +203,7 @@ class BaseApp:
             return first
 
     def _mount_spa_routes(self):
-        spa_routes_map: Dict[str, Dict[str, list]] = self.app_data.spa_routes
+        spa_routes_map: Dict[str, Dict[str, List[SPAPath]]] = self.app_data.spa_routes
         if not spa_routes_map:
             return
 
@@ -180,10 +211,11 @@ class BaseApp:
             spa_routes_json = json.dumps(spa_component_routes, indent=4)
             with open(os.path.join(self.app_data.static_folder, f'spa_{spa_name}_routes.js'), 'w') as f:
                 f.write(f'SPA_ROUTES={spa_routes_json}')
-            spa_index_get_handler = self.app_data.named_routes[f'spa_main[{spa_name}]'].methods['GET'].handler
-            for rules in spa_component_routes.values():
-                for r in rules:
-                    self._mount_route(spa_index_get_handler, (r, 'GET', None), {})
+            spa_main_handler = self.app_data.named_routes[f'spa_main[{spa_name}]'].methods['GET'].handler
+            for spa_paths in spa_component_routes.values():
+                spa_paths = (p for p in spa_paths if not p.is_main_path)
+                for p in spa_paths:
+                    self._mount_route(spa_main_handler, (p.path, 'GET', None), {})
 
     def _iter_registered(self):
         for m in reversed(self._mixins):
@@ -246,7 +278,7 @@ class BaseApp:
         path, method, name = route_args
         app_data = self.app_data
 
-        is_index = path == 'index'
+        is_app_index = path == 'index'
         path = self._get_abs_url(app_data.base_url, path)
         route = self.add_route(path, method, fun, **route_kw)
         app_data.routes.add(route)
@@ -255,8 +287,8 @@ class BaseApp:
                 raise KeyError(f'The route name already in use: {name}')
             app_data.named_routes[name] = route
 
-        if is_index:
-            app_data.named_routes['[spa-index]'] = route
+        if is_app_index:
+            #app_data.named_routes['[spa-index]'] = route
             route = self.add_route(
                 path[:-len('/index')] or '/', method, fun, **route_kw
             )
@@ -266,6 +298,7 @@ class BaseApp:
 class SPA:
 
     main_route_name: str
+    main_path: str
 
     def __init__(self, app: BaseApp, name):
         self.name = name
@@ -273,6 +306,7 @@ class SPA:
 
     def main(self, path):
         self.main_route_name = f'spa_main[{self.name}]'
+        self.main_path = path
         return self._app.route(path, name=self.main_route_name)
 
     def route(self, rule, *args, **kw):
@@ -281,4 +315,7 @@ class SPA:
 
     def use(self, *fixt):
         return self._app.use(*fixt)
+
+    def response(self, **kw):
+        return SPAResponse(**kw)
 
