@@ -1,0 +1,25 @@
+def make(spa_tools):
+
+    from asset import mechanic
+    mechanic.module_spec('spa_tools').exports = spa_tools
+
+    import bundled_pages as spa_pages
+    import bundled_components as spa_components
+
+    def register_components(Vue):
+        if not spa_components:
+            return
+        for module_name in spa_components:
+            c = spa_components[module_name].make()
+            cid = c.name.split('.')[-1]
+            Vue.component(cid, c)
+
+    return {
+        pages: spa_pages,
+        components: spa_components,
+        register_components,
+    }
+
+define(['js/spa_tools'], def(spa_tools): return make(spa_tools);)
+
+

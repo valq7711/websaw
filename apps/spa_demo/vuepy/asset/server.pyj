@@ -1,0 +1,54 @@
+
+HTTP_METHODS = 'get post put patch delete head'.split(' ')
+
+def inject_http_methods(cls):
+    for m in HTTP_METHODS:
+        v'const meth = m'
+        cls.prototype['_' + meth] = (
+            def(*args):
+                return this._http(meth, *args)
+        )
+    return cls
+
+@inject_http_methods
+class API:
+    def __init__(self, axios, baseURL, axios_opt):
+        self.baseURL = baseURL
+        axios_opt = axios_opt or {}
+        self.srv = axios.create(axios_opt)
+        self.http = self._http.bind(self)
+        for m in HTTP_METHODS:
+            self[m] = self['_' + m].bind(self)
+
+
+    def _http(self, meth, path_query, data_or_get_headers, headers):
+        meth = meth.toLowerCase()
+        query = None
+        if type(path_query) is 'String':
+            path = path_query
+        else:  # array
+            # the last element may be query params
+            if type(path_query[-1]) is not 'String':
+                query = path_query.pop()
+            path = path_query.join('/')
+        if meth in ['get', 'head']:
+            data = None
+            if headers is undefined:
+                headers = data_or_get_headers
+        else:
+            data = data_or_get_headers
+
+        if not path.startsWith('/'):
+            path = f'${self.baseURL}/${path}'
+
+        conf = {
+            method: meth,
+            url: path,
+        }
+        if query and len(query):
+            conf.params = query
+        if data:
+            conf.data = data
+        if headers and len(headers):
+            conf.headers = headers
+        return self.srv.request(conf)

@@ -1,0 +1,16 @@
+params = document.getElementsByTagName('meta')[0].dataset
+SPA_ENV = window.SPA_ENV = Object.assign({}, params)
+SPA_ENV.app_static = SPA_ENV.app_base + '/static'
+SPA_ENV.spa = {
+    components: SPA_ENV.app_static + 'spa/components',
+    pages: SPA_ENV.app_static + 'spa/pages'
+}
+
+define(['amd'], (def(amd):
+    amd.config({base_url: SPA_ENV.app_static})
+    amd.import('js/app').then(
+        def(app):
+           app.$mount('#app')
+    )
+
+))

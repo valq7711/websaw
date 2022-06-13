@@ -1,0 +1,272 @@
+from asset.rs_vue import RS_vue, V_collector
+from asset.asyncer import asyncer
+from asset.server import API
+
+env = window.SPA_ENV
+
+
+amd = None
+axios = None
+VueRouter = None
+api = None
+
+
+@asyncer
+def load_component(name):
+    c = yield amd.import(f'${env.spa.components}/${name}')
+    if not (c.template or c.render):
+        templ = name + '.html'
+        c.template = (yield api.get([env.spa.components, templ_url])).data
+    return c
+
+
+vc = V_collector()
+
+class PageUtil:
+    def __init__(self, vm):
+        self.vm = vm
+
+    @asyncer
+    def http(self, meth, path_query, data_or_get_headers, headers):
+        if not path_query or not len(path_query):
+            path_query = [self.vm.page_api]
+
+        if not isinstance(path_query, Array):
+            path_query = [path_query]
+
+        if len(path_query) == 1 and type(path_query[0]) != 'String':
+            path_query = [None, path_query[0]]
+
+        if not path_query[0]:
+            path_query[0] = self.vm.page_api
+        elif path_query[0].startsWith('./'):
+            path_query[0] = self.vm.page_api_root + path_query[0][1:]
+
+        resp = yield api.http(meth, path_query, data_or_get_headers, headers)
+        self.vm.on_response(resp)
+
+    def get(self, *args):
+        len_args = len(args)
+        path, query, headers = [None, None, None]
+        if len_args == 1:
+            path = args.pop()
+        elif len_args == 2:
+            path, query = args
+        elif len_args == 3:
+            path, query, headers = args
+        self.http('get', [path, query], headers)
+
+    def post(self, *args):
+        self.http('post', *args)
+
+    @asyncer
+    def redirect(self, path, query):
+        if query is undefined and type(path) not in ['String', 'Array']:
+            query = path
+            path = None
+        if not path or path is '.':
+            path = self.vm.$route.path
+        if path[0] is not '/':
+            path = '/' + path
+        if not query:
+            query = {}
+        try:
+            yield self.vm.$router.push({path, query})
+        except as err:
+            if err._isRouter and err.type != VueRouter.NavigationFailureType.duplicated:
+                raise
+            self.reload_data()
+
+    def reload_data(self):
+        r = self.vm.$route
+        self.get('.' + r.path, r.query)
+
+    def parse_response(self, r):
+        data = r.data
+        commands = None
+        # axios lowers header names
+        if r.headers['x-sparesponse']:
+            commands = data
+            data = commands.data or None
+            del commands.data
+        return data, commands
+
+@vc.component()
+class PageMixin(RS_vue):
+
+    def beforeCreate(self):
+        self.$pu = PageUtil(self)
+        self.$data_commands = self.$pu.parse_response(self.$attrs.in_response)
+
+    def on_response(self, r):
+        data, commands = self.$pu.parse_response(r)
+        for k in data:
+            self[k] = data[k]
+        for c in (commands or []):
+            args = commands[c]
+            if not Array.isArray(args):
+                args = [args]
+            self[c].call(self, *args)
+
+    def redirect(self, *args):
+        self.$pu.redirect(*args)
+
+    def alert(self, msg):
+        @self.$nextTick
+        def():
+            setTimeout(def(): alert(msg);, 100)
+
+    @vc.watch('$route')
+    def on_route_changed(self, to_, from_):
+        self.$pu.get('.' + to_.path, to_.query)
+
+    @vc.computed
+    def page_api(self):
+        return f'${self.page_api_root}${self.$route.path}'
+
+    @vc.computed
+    def page_api_root(self):
+        return f'pages-api/${env.spa_name}'
+
+
+page_mixin = PageMixin()
+
+@vc.component(page_mixin)
+class PageBase(RS_vue):
+    def __init__(self, templ):
+        self.template = templ
+
+    def data(self):
+        #ret = JSON.parse(self.$options.model_json)
+        ret = {}
+        data, commands = self.$data_commands
+        return data
+
+    def mounted(self):
+        data, commands = self.$data_commands
+        if not commands:
+            return
+        for c in commands:
+            args = commands[c]
+            if not Array.isArray(args):
+                args = [args]
+            self[c].call(self, *args)
+
+
+@vc.component()
+class PageWrapper(RS_vue):
+
+    def __init__(self, component_or_url, pages):
+        pg_module = pages[component_or_url]
+        if pg_module:
+            component = pg_module.make()
+            component.mixins = [page_mixin]
+            templ_url = None
+        else:
+            component = None
+            templ_url = component_or_url
+        self.meta = {
+            templ_url,
+            component: component,
+        }
+        #self.functional = True
+
+    def data(self):
+        meta = self.meta
+        component_loaded = meta.component is not None
+        return {
+            component_loaded: component_loaded,
+            in_response_loaded: False
+        }
+
+    def beforeCreate(self):
+        self.meta = self.$options.meta
+        self.in_response = None
+
+    def page_api_uri(self):
+        #return 'pages-api/' + self.$route.fullPath.split('/')[2:].join('/')
+        return f'pages-api/${env.spa_name}' + self.$route.fullPath
+
+    @asyncer
+    def load_page_component(self):
+        meta = self.meta
+        template = None
+        page_api_uri = self.page_api_uri()
+        if not meta.component:
+            if meta.templ_url.endsWith('.js'):
+                module_name = meta.templ_url[0:-3]
+                module_path = [env.app_base, 'static', module_name].join('/')
+                component = (yield amd.import(module_path))
+                if not (component.template or component.render):
+                    templ_url = module_name + '.html'
+                    component.template = (yield api.get(['static', templ_url])).data
+                component.mixins = [page_mixin]
+                meta.component = component
+            else:
+                template = (yield api.get(['static', meta.templ_url])).data
+                meta.component = PageBase(template)
+            #data_model = (yield api.get(page_api_uri)).data
+        self.component_loaded = True
+
+    @asyncer
+    def load_data(self):
+        page_api_uri = self.page_api_uri()
+        response = (yield api.get([page_api_uri]))
+        self.in_response = response
+        self.in_response_loaded = True
+
+
+    def render(self, h):
+        meta = self.meta
+        if not self.component_loaded:
+            self.load_page_component()
+            return h({template:'<div>Loading...</div>'});
+        if not self.in_response_loaded:
+            self.load_data()
+            return h({template:'<div>Loading...</div>'});
+        component = meta.component
+        in_response = self.in_response
+        return h(component, {attrs:{in_response}});
+
+
+def make_routes(routes_map, pages):
+    ret = []
+    for templ_url in routes_map:
+        #templ = (yield api.get([templ_url])).data
+        for spa_route in routes_map[templ_url]:
+            route = spa_route.path
+            if route.startsWith('/'):
+                route = route[1:]
+            if spa_route.is_main_path:
+                # make it optional
+                route = f'(${route})?'
+            type_prefix, component_or_url = templ_url.split(':')
+            rec = {
+                path: f'/${route}',
+                component: PageWrapper(component_or_url, pages),
+            }
+            ret.push(rec)
+    return ret
+
+def make_router(routes_map, pages):
+    router = new VueRouter({
+        routes: make_routes(routes_map, pages),
+        mode: 'history',
+        base: env.app_base,
+    })
+    return router
+
+define(['amd', 'js/axios.min', 'js/vue-router'], (def(amd_, axios_, VueRouter_):
+    nonlocal amd, axios, VueRouter, api
+    amd, axios, VueRouter = amd_, axios_, VueRouter_
+    api = API(axios, env.app_base)
+    return {
+        load_component,
+        make_router,
+        api,
+        RSVue: RS_vue,
+        v_collector: def():
+            return V_collector()
+        asyncer: asyncer,
+    }
+))
