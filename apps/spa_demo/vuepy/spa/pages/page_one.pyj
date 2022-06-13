@@ -1,0 +1,17 @@
+templ= """
+<layout>
+    <p>This page stored in static/spa/pages/page_one.js</p>
+    <p>It was created using pyjsaw, src: vuepy/spa/pages/page_one.vuepy</p>
+    <p>After changes vuepy-file just press `Compile` to update js-file</p>
+    <button  @click = 'count+=1'>Click me</button>
+    <div>count: {{count}}</div>
+</layout>
+"""
+
+pg = {
+    template: templ,
+    def data(self):
+        return {count: 1}
+}
+
+define([], def(): return pg;)
