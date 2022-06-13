@@ -1,0 +1,19 @@
+templ= """
+<div>
+    <h2>This is bundled INDEX page</h2>
+</div>
+"""
+
+
+async import spa_tools
+
+vc = spa_tools.VCollector()
+
+@vc.component()
+class Page(spa_tools.RSVue):
+    def __init__(self):
+        self.name = __name__
+        self.template = templ
+
+def make():
+    return Page()

@@ -1,0 +1,14 @@
+
+define(['js/vue', 'js/vue-router', 'js/spa_tools', 'js/spa_bundle'], (def(Vue, VueRouter, spa_tools, spa_bundle):
+
+    spa_bundle.register_components(Vue)
+
+    app = {
+        router: spa_tools.make_router(SPA_ROUTES, spa_bundle.pages or {}),
+        render: def(h):
+            return h('router-view')
+    }
+    Vue.use(VueRouter)
+    window.app = new Vue(app)
+    return window.app
+))

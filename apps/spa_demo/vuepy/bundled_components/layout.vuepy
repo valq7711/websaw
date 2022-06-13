@@ -1,0 +1,36 @@
+# Don't compile me
+# import me in vuepy/bundled_components/__init__.pyj
+# and recompile vuepy/spa_bundle.pyj after changes
+v-def templ:
+    div:
+        h2: 'This is layout (vuepy/bundled_components/layout.vuepy)'
+        nav:
+            router-link(to="/page-one"): 'One'
+            router-link(to='/page-two'): 'Two'
+            router-link(to='/page-three'): 'Three'
+            router-link(to='/search'): 'Search'
+            router-link(to='/post-demo'): 'Post demo'
+        h1: 'Current URI: {{$route.fullPath}}'
+        p: 'Page Content:'
+        div(style='padding-left: 50px; background-color: #eee;'):
+            # here current page will be mounted
+            slot:
+        div:
+            router-link(to='/index'): 'index'
+v-pyj:
+@{
+
+async import spa_tools
+
+vc = spa_tools.v_collector()
+
+@vc.component()
+class Component(spa_tools.RSVue):
+    def __init__(self):
+        self.name = __name__
+        self.template = templ
+
+def make():
+    return Component()
+
+}@

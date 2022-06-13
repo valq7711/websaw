@@ -1,0 +1,32 @@
+'<!DOCTYPE html>'
+html:
+    title: 'spa-demo'
+    meta(
+        charset="UTF-8",
+        data-app_base="[[=URL()]]",
+        data-spa_name="[[=spa_name]]",
+    ):
+    body:
+        div(id='app'):  # here app will be mounted
+        script( src="[[=URL('static', 'js/rs_require.js')]]"):
+        script( src="[[=URL('static', f'spa_{spa_name}_routes.js')]]"):
+        script( src="[[=URL('static', 'js/index.js')]]"):
+
+
+v-pyj:
+    params = document.getElementsByTagName('meta')[0].dataset
+    SPA_ENV = window.SPA_ENV = Object.assign({}, params)
+    SPA_ENV.app_static = SPA_ENV.app_base + '/static'
+    SPA_ENV.spa = {
+        components: SPA_ENV.app_static + 'spa/components',
+        pages: SPA_ENV.app_static + 'spa/pages'
+    }
+
+    define(['amd'], (def(amd):
+        amd.config({base_url: SPA_ENV.app_static})
+        amd.import('js/app').then(
+            def(app):
+               app.$mount('#app')
+        )
+
+    ))
