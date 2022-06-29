@@ -13,13 +13,15 @@ class Template(Fixture):
 
     cache = Cache(100)
 
-    def __init__(self, filename, path=None, delimiters="[[ ]]", inject=None):
+    def __init__(self, filename: str, path: str = None, delimiters="[[ ]]", inject: dict = None):
         if ':' in filename:
             context_key, filename = filename.split(':')
         else:
             context_key = None
         self.context_key = context_key
         self.with_path_prefix = '/' in filename
+        if self.with_path_prefix and filename.startswith('.'):
+            filename = '{}' + filename[1:]  # `./`-> `{}/`
         self.filename = filename
         self.path = path
         self.delimiters = delimiters
@@ -44,12 +46,13 @@ class Template(Fixture):
             **shared_data.get("template_context", {}),
             **output,
         )
+        template_folder = ctx.app_data.template_folder
         if self.with_path_prefix:
-            file_path = self.filename.format(**ctx.env)
+            file_path = self.filename.format(template_folder, **ctx.env)
             path, filename = os.path.split(file_path)
         else:
             filename = self.filename
-            path = self.path or ctx.app_data.template_folder
+            path = self.path or template_folder
             file_path = path_join(path, filename)
 
         if not os.path.exists(file_path):

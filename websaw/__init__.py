@@ -130,18 +130,19 @@ class DefaultApp(BaseApp):
         super().__init__(cfg, ctx)
 
     def use(self, *fixt):
-        app_name = self.default_config['app_name']
         return super().use(*[
-            self._str_to_template(f, app_name) if isinstance(f, str) else f
+            self._str_to_template(f, self) if isinstance(f, str) else f
             for f in fixt
         ])
 
     @staticmethod
-    def _str_to_template(templ: str, app_name: str):
+    def _str_to_template(templ: str, app: 'DefaultApp'):
         if '#' in templ:
             templ = templ.replace('#', '')
             return SPAComponent(templ)
-        return Template(templ, inject={'mixin_name': app_name})
+        template_folder = app.default_config['template_folder']
+        app_name = app.default_config['app_name']
+        return Template(templ, path=template_folder, inject={'mixin_name': app_name})
 
 
 def jsonfy(ctx: BaseContext, dct):
