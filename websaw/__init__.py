@@ -28,6 +28,7 @@ from .core import (
 
 from .fixtures import (
     Template,
+    UTemplate,
     Session, GroupSession,
     DAL,
     URL,
@@ -55,7 +56,7 @@ __all__ = (
     'redirect',
     'Cache',
 
-    'Template',
+    'Template', 'UTemplate',
     'Session', 'GroupSession',
     'DAL',
     'Field',
@@ -127,11 +128,16 @@ class DefaultApp(BaseApp):
 
     def use(self, *fixt):
         app_name = self.default_config['app_name']
-        return super().use(*[
-            Template(f, path=self.default_config['template_folder'], inject={'mixin_name': app_name})
-            if isinstance(f, str) else f
-            for f in fixt
-        ])
+        fixtures = []
+        for fx in fixt:
+            if isinstance(fx, str):
+                fx = Template(
+                    fx, path=self.default_config['template_folder'], inject={'mixin_name': app_name}
+                )
+            elif isinstance(fx, dict):
+                fx = UTemplate(fx)
+            fixtures.append(fx)
+        return super().use(*fixtures)
 
 
 def jsonfy(ctx: BaseContext, dct):

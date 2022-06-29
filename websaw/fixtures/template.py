@@ -1,6 +1,7 @@
 import os
 
 import yatl
+from upytl import UPYTL
 
 from ..core import Cache, render, BaseContext
 from ..core.fixture import Fixture
@@ -57,3 +58,30 @@ class Template(Fixture):
         ctx.output = render(
             filename=filename, path=path, context=context, delimiters=self.delimiters
         )
+
+
+class UTemplate(Fixture):
+
+    def __init__(self, template: dict, inject=None, global_ctx=None):
+        self.template = template
+        self.global_ctx = global_ctx or {}
+        self.inject = inject or {}
+
+    def take_off(self, ctx: BaseContext):
+        output = ctx.output
+        if not isinstance(output, dict):
+            return
+        shared_data = ctx.state.shared_data
+        context = dict(
+            request=ctx.request,
+            URL=ctx.URL,
+            app_get=ctx.get,
+            mixin_get=ctx.mixin_get,
+            __vars__=output,
+            env=ctx.env,
+            **self.inject,
+            **shared_data.get("template_context", {}),
+            **output,
+        )
+        u = UPYTL(global_ctx=self.global_ctx)
+        ctx.output = u.render(self.template, context)
