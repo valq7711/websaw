@@ -73,7 +73,6 @@ def app_welcome(ctx: Context):
     return dict(msg='Hey! This is message from app controller')
 
 
-# reuse mixin template
 @app.route('upytl-demo')
 @app.use(ut.upytl_demo)
 def upytl_demo(ctx: Context):
