@@ -1,0 +1,45 @@
+
+# Don't compile me
+# import me in vuepy/bundled_pages/__init__.pyj
+# and recompile vuepy/spa_bundle.pyj after changes
+v-def templ:
+    span:
+        input(v-model='input_search', :disabled='is_loading'):
+        button(@click='$emit("input_search", input_search)', :disabled='is_loading'):
+            '{{button_text}}'
+
+
+
+v-pyj:
+@{
+
+async import spa_tools
+
+vc = spa_tools.v_collector()
+
+@vc.component()
+class Component(spa_tools.RSVue):
+    def __init__(self):
+        self.name = __name__
+        self.template = templ
+        self.props = ['current_search', 'is_loading']
+
+    def data(self):
+        return {
+            input_search: self.current_search,
+            button_text: 'Search',
+        }
+
+    @vc.watch('current_search')
+    def watch_current_search(self, n, o):
+        self.input_search = n
+
+    @vc.watch('is_loading')
+    def watch_is_loading(self, n, o):
+        self.button_text = n ? 'Loading...' : 'Search'
+
+
+def make():
+    return Component()
+
+}@
