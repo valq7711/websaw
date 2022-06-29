@@ -1,6 +1,6 @@
 (function(){
 "use strict";
-var ՐՏ_1, ՐՏ_2;
+var ՐՏ_1, ՐՏ_2, ՐՏ_3;
 function ՐՏ_extends(child, parent) {
     child.prototype = Object.create(parent.prototype);
     child.prototype.__base__ = parent;
@@ -71,6 +71,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
 ՐՏ_modules.ՐՏ_def("bundled_pages.index");
 ՐՏ_modules.ՐՏ_def("bundled_pages");
 ՐՏ_modules.ՐՏ_def("bundled_components.layout");
+ՐՏ_modules.ՐՏ_def("bundled_components.search_box");
 ՐՏ_modules.ՐՏ_def("bundled_components");
 
 ՐՏ_modules["ՐՏ:asset.mechanic"].body = function(){
@@ -205,7 +206,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
     var __name__ = "bundled_pages.index";
 
     var templ, vc;
-    templ = "\n<layout>\n    <p>This is spa-part of Index-page</p>\n    <p>It was created using pyjsaw, src: vuepy/bundled_pages/index.vuepy</p>\n    <p>It is bundled into spa_bundle.pyj which is compiled to static/js/spa_bundle.js</p>\n</layout>\n";
+    templ = "\n<layout>\n    <p>This is spa-part of Index-page</p>\n    <p>It was created using pyjsaw, src: vuepy/bundled_pages/index.vuepy</p>\n    <p>It is bundled into spa_bundle.pyj which is compiled to static/js/spa_bundle.js</p>\n    <search_box  :current_search = 'current_search' :is_loading = 'search_loading' @input_search = 'do_search'></search_box>\n    <div>\n        {{current_search}}\n    </div>\n</layout>\n";
     var spa_tools = ՐՏ_modules["spa_tools"];
     vc = spa_tools.v_collector();
     
@@ -215,6 +216,21 @@ var ՐՏ_modules = ՐՏ_def_modules();
             var self = this;
             self.name = __name__;
             self.template = templ;
+        }
+        data () {
+            var self = this;
+            return {
+                current_search: "Some",
+                search_loading: false
+            };
+        }
+        do_search (txt) {
+            var self = this;
+            self.search_loading = true;
+            setTimeout(function() {
+                self.current_search = txt;
+                self.search_loading = false;
+            }, 1e3);
         }
     }, ՐՏ_1 = vc.component()(ՐՏ_1), ՐՏ_1);
     function make() {
@@ -267,13 +283,74 @@ var ՐՏ_modules = ՐՏ_def_modules();
     return ՐՏ_mod["exports"];
 };
 
+ՐՏ_modules["ՐՏ:bundled_components.search_box"].body = function(){
+    var __name__ = "bundled_components.search_box";
+
+    var templ, vc;
+    templ = "\n<span>\n    <input  v-model = 'input_search' :disabled = 'is_loading'/>\n    <button  @click = '$emit(\"input_search\", input_search)' :disabled = 'is_loading'>\n        {{button_text}}\n    </button>\n</span>\n";
+    var spa_tools = ՐՏ_modules["spa_tools"];
+    vc = spa_tools.v_collector();
+    
+    var Component = (ՐՏ_3 = class Component extends spa_tools.RSVue {
+        constructor () {
+            super();
+            var self = this;
+            self.name = __name__;
+            self.template = templ;
+            self.props = [ "current_search", "is_loading" ];
+        }
+        data () {
+            var self = this;
+            return {
+                input_search: self.current_search,
+                button_text: "Search"
+            };
+        }
+        watch_current_search (n, o) {
+            var self = this;
+            self.input_search = n;
+        }
+        watch_is_loading (n, o) {
+            var self = this;
+            self.button_text = n ? "Loading..." : "Search";
+        }
+    }, ՐՏ_3 = vc.component()((function(){
+        Object.defineProperties(ՐՏ_3.prototype, {
+            watch_current_search: {
+                enumerable: false, 
+                writable: true, 
+                value: vc.watch("current_search")(ՐՏ_3.prototype.watch_current_search)
+            },
+            watch_is_loading: {
+                enumerable: false, 
+                writable: true, 
+                value: vc.watch("is_loading")(ՐՏ_3.prototype.watch_is_loading)
+            }
+        });
+        return ՐՏ_3;
+    })()), ՐՏ_3);
+    function make() {
+        return new Component();
+    }
+    var ՐՏ_mod = ՐՏ_modules["ՐՏ:bundled_components.search_box"];
+    ՐՏ_mod.export("templ", function(){return templ;}, function(ՐՏ_v){if (typeof templ !== "undefined") {templ = ՐՏ_v;};});
+    ՐՏ_mod.export("vc", function(){return vc;}, function(ՐՏ_v){if (typeof vc !== "undefined") {vc = ՐՏ_v;};});
+    ՐՏ_mod.export("Component", function(){return Component;}, function(ՐՏ_v){if (typeof Component !== "undefined") {Component = ՐՏ_v;};});
+    ՐՏ_mod.export("make", function(){return make;}, function(ՐՏ_v){if (typeof make !== "undefined") {make = ՐՏ_v;};});
+    ՐՏ_mod.export("spa_tools", function(){return spa_tools;}, function(ՐՏ_v){if (typeof spa_tools !== "undefined") {spa_tools = ՐՏ_v;};});
+    return ՐՏ_mod["exports"];
+};
+
 ՐՏ_modules["ՐՏ:bundled_components"].body = function(){
     var __name__ = "bundled_components";
 
     ՐՏ_modules["ՐՏ:bundled_components"].export("layout", function(){return ՐՏ_modules["bundled_components.layout"];}, function(){throw new Error("use Object.defineProperty!");});
+    ՐՏ_modules["ՐՏ:bundled_components"].export("search_box", function(){return ՐՏ_modules["bundled_components.search_box"];}, function(){throw new Error("use Object.defineProperty!");});
     var layout = ՐՏ_modules["bundled_components.layout"];
+    var search_box = ՐՏ_modules["bundled_components.search_box"];
     var ՐՏ_mod = ՐՏ_modules["ՐՏ:bundled_components"];
     ՐՏ_mod.export("layout", function(){return layout;}, function(ՐՏ_v){if (typeof layout !== "undefined") {layout = ՐՏ_v;};});
+    ՐՏ_mod.export("search_box", function(){return search_box;}, function(ՐՏ_v){if (typeof search_box !== "undefined") {search_box = ՐՏ_v;};});
     return ՐՏ_mod["exports"];
 };
 
@@ -287,7 +364,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
         var spa_pages = ՐՏ_modules["bundled_pages"];
         var spa_components = ՐՏ_modules["bundled_components"];
         function register_components(Vue) {
-            var ՐՏitr2, ՐՏidx2, ՐՏ_3;
+            var ՐՏitr2, ՐՏidx2, ՐՏ_4;
             var module_name, c, cid;
             if (!spa_components) {
                 return;
@@ -296,7 +373,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
             for (ՐՏidx2 = 0; ՐՏidx2 < ՐՏitr2.length; ՐՏidx2++) {
                 module_name = ՐՏitr2[ՐՏidx2];
                 c = spa_components[module_name].make();
-                cid = (ՐՏ_3 = c.name.split("."))[ՐՏ_3.length-1];
+                cid = (ՐՏ_4 = c.name.split("."))[ՐՏ_4.length-1];
                 Vue.component(cid, c);
             }
         }
