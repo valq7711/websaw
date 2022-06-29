@@ -6,6 +6,7 @@ from websaw.fixtures import Env
 import ombott
 
 from ..mixins import info
+from . import utemplates as ut
 
 ombott.default_app().setup(dict(debug=True))
 
@@ -72,12 +73,19 @@ def app_welcome(ctx: Context):
     return dict(msg='Hey! This is message from app controller')
 
 
+# reuse mixin template
+@app.route('upytl-demo')
+@app.use(ut.upytl_demo)
+def upytl_demo(ctx: Context):
+    return dict(msg='Hey! This page is rendered using UPYTL')
+
 
 # let's go to:
 # http://127.0.0.1:8000/simple
 # http://127.0.0.1:8000/simple/index
 # http://127.0.0.1:8000/simple/session
 # http://127.0.0.1:8000/simple/reuse_welcome_template
+# http://127.0.0.1:8000/simple/upytl-demo
 
 # provided by mixin
 # http://127.0.0.1:8000/simple/welcome

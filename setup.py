@@ -51,6 +51,7 @@ setup(
         "requests",
         "watchgod",
         "renoir",
+        "upytl",
     ],
     python_requires='>=3.7',
     packages=['websaw', 'websaw.core', 'websaw.fixtures'],
