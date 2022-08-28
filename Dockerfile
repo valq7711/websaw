@@ -14,6 +14,8 @@ RUN pip install --upgrade pip && pip install -e . && pip install pillow && \
     pip install https://github.com/valq7711/pyjsaw/archive/main.zip && \
     pip install https://github.com/valq7711/voodoodal/archive/main.zip
 
+VOLUME ["/apps"]
+
 EXPOSE 8000
 
-CMD ["python", "websaw", "run",  "apps"]
+CMD ["python", "websaw", "run",  "apps", "--watch=sync"]
