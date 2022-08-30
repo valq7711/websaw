@@ -23,7 +23,7 @@ app = DefaultApp(ctx_, name=__package__)
 @app.use('welcome_templ:welcome.html')
 def welcome(ctx):
     msg = (
-        'Hey! this is message from info-mixin cntroller'
+        'Hey! this is ANOTHER message from info-mixin cntroller'
         'It uses mixin template'
     )
     return dict(msg=msg)
@@ -44,7 +44,7 @@ def welcome_overwite_template(ctx):
 @app.use('{templ_dir}/welcome.html')
 def welcome_template_env(ctx):
     msg = (
-        'Hey! this is message from info-mixin cntroller '
+        'Hey! this is NEW message from info-mixin cntroller '
         "It uses template `welcome.html` from ctx.env['templ_dir'] "
     )
     return dict(msg=msg)

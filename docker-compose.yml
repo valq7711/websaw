@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  websaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: websaw
+    tty: true
+    volumes:
+      - ./apps:/websaw/apps
+    
+    network_mode: host
+
+  
