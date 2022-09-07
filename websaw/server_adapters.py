@@ -1,16 +1,11 @@
 import logging
 from ombott.server_adapters import ServerAdapter
 
-try:
-    from .utils.wsservers import *
-except ImportError:
-    wsservers_list = []
-
 __all__ = [
     "geventWebSocketServer",
     "wsgirefThreadingServer",
     "rocketServer",
-] + wsservers_list
+]
 
 
 def geventWebSocketServer():
@@ -95,9 +90,9 @@ def wsgirefThreadingServer():
             if ":" in self.host:  # Fix wsgiref for IPv6 addresses.
                 if getattr(server_cls, "address_family") == socket.AF_INET:
 
-                    class server_cls(server_cls):
+                    class _server_cls(server_cls):
                         address_family = socket.AF_INET6
-
+                    server_cls = _server_cls
             srv = make_server(self.host, self.port, app, server_cls, handler_cls)
             srv.serve_forever()
 
@@ -105,11 +100,7 @@ def wsgirefThreadingServer():
 
 
 def rocketServer():
-    try:
-        from rocket3 import Rocket3 as Rocket
-    except ImportError:
-        from .rocket3 import Rocket3 as Rocket
-    import logging.handlers
+    from rocket3 import Rocket3 as Rocket
 
     class RocketServer(ServerAdapter):
         def run(self, app):
