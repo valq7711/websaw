@@ -23,6 +23,7 @@ setup(
     maintainer=__author__,
     maintainer_email="valq7711@gmail.com",
     description="websaw - a web framework for rapid development with pleasure",
+    long_description="websaw - a web framework for rapid development with pleasure",
     platforms="any",
     keywords='python webapplication',
     classifiers=[
