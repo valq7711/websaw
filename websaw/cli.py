@@ -1,7 +1,6 @@
 """WEBSAW - a web framework for rapid development with pleasure"""
 
 import os
-import code
 import click
 import sys
 import platform
@@ -9,7 +8,6 @@ import json
 import pydal
 import zipfile
 import signal
-import asyncio
 import logging
 import ombott
 import inspect
