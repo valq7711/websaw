@@ -3,7 +3,7 @@ import os
 import yatl
 from upytl import UPYTL
 
-from ..core import Cache, render, BaseContext, redirect
+from ..core import Cache, render, BaseContext
 from ..core.fixture import Fixture, SPAFixture
 
 
@@ -112,7 +112,7 @@ class SPAComponent(SPAFixture):
         else:
             self.component = component_or_file_name
 
-    def make_component_reference(self, ctx, prefix: str):
+    def make_component_reference(self, ctx: BaseContext, prefix: str):
         if self.component is not None:
             return f"component:{self.component}"
         templ_url = self._make_static_tail_url(ctx)
@@ -121,7 +121,7 @@ class SPAComponent(SPAFixture):
             prefix = f'{prefix}/'
         return f"url:{prefix}{templ_url}"
 
-    def _make_static_tail_url(self, ctx):
+    def _make_static_tail_url(self, ctx: BaseContext):
         '''
         Return the tail of the static url, which must be prefixed with
         `{app}/static/` or `{app}/static/{mxn}/`
