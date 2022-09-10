@@ -32,7 +32,7 @@ class Context(info.Context, DefaultContext):
 
 
 ctxd = Context()
-app = DefaultApp(ctxd, dict(group_name='websaw_apps_group_one'), name=__package__)
+app = DefaultApp(ctxd, config=dict(group_name='websaw_apps_group_one'), name=__package__)
 
 # use mixin(s)
 app.mixin(info.app)
