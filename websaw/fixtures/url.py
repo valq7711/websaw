@@ -8,6 +8,17 @@ from ..core import Fixture, BaseContext
 url_quote = urllib.parse.quote
 
 
+class URLContext(SimpleNamespace):
+    script_name: str
+    domain_mapped: str
+    static_version: str
+    scheme: str
+    domain: str
+    base_url: str
+    static_url: str
+    named_routes: dict
+
+
 class URL(Fixture):
     def __init__(
         self,
@@ -19,11 +30,10 @@ class URL(Fixture):
 
     def take_on(self, ctx: BaseContext):
         env_get = ctx.request.environ.get
-        # FIXME
-        original_url = env_get("HTTP_ORIGIN") or ctx.request.url
+        original_url: str = env_get("HTTP_ORIGIN") or ctx.request.url
         scheme, _, domain = original_url.split("/", 3)[:3]
 
-        url_ctx = SimpleNamespace(
+        url_ctx = URLContext(
             script_name=env_get(self.script_name, "").rstrip("/"),
             domain_mapped=env_get(self.domain_map),
             static_version=ctx.get('static_version'),
@@ -45,6 +55,10 @@ class URL(Fixture):
         )
 
 
+class URLBuilderLocal(threading.local):
+    url_ctx: URLContext
+
+
 class URLBuilder:
     """
     Examples:
@@ -57,12 +71,12 @@ class URLBuilder:
     URL(':profile', dict(user='tom'))  -> /{script_name?}/{app_name?}/path/to/profile/tom
     """
 
-    _local = threading.local()
-    _local.ctx = None
+    _local = URLBuilderLocal()
+    _local.url_ctx = None
 
     @classmethod
-    def setup(cls, url_ctx: SimpleNamespace):
-        cls._local.ctx = url_ctx
+    def setup(cls, url_ctx: URLContext):
+        cls._local.url_ctx = url_ctx
 
     __slots__ = (
         'parts', 'vars', 'hash', 'scheme', 'signer',
@@ -94,7 +108,7 @@ class URLBuilder:
         return self.__str__()
 
     def __str__(self):
-        ctx = self._local.ctx
+        url_ctx: URLContext = self._local.url_ctx
 
         vars = self.vars
         hash = self.hash
@@ -102,7 +116,7 @@ class URLBuilder:
         use_appname = self.use_appname
         parts = self.parts
         scheme = self.scheme
-        base_url = ctx.base_url[1:]  # remove '/'
+        base_url = url_ctx.base_url[1:]  # remove '/'
         is_abs_url = False
         is_named_route = False
 
@@ -121,7 +135,7 @@ class URLBuilder:
                 if idx < len_parts and isinstance(parts[idx], dict):
                     route_kw = parts[idx]
                     idx += 1
-                route_url = ctx.named_routes[route_name].url(*route_args, **route_kw)
+                route_url = url_ctx.named_routes[route_name].url(*route_args, **route_kw)
                 broken_parts = [route_url]
                 is_named_route = True
             else:
@@ -129,28 +143,28 @@ class URLBuilder:
                 if broken_parts[0] == "static":
                     if static_version != "":
                         if static_version is None:
-                            static_version = ctx.static_version
+                            static_version = url_ctx.static_version
                         if static_version:
                             broken_parts.insert(1, f"_{static_version}")
-                    base_url = ctx.static_url[1:]
+                    base_url = url_ctx.static_url[1:]
                 else:
                     if broken_parts[0] == '':  # i.e. startswith '/'
                         is_abs_url = True
 
-        prefix = (ctx.script_name or '') + '/'
+        prefix = (url_ctx.script_name or '') + '/'
         if is_abs_url:
             prefix = prefix.rstrip('/')
         else:
             if not is_named_route:
                 broken_parts.insert(0, base_url)
             if use_appname is None:
-                use_appname = not ctx.domain_mapped
+                use_appname = not url_ctx.domain_mapped
             if not use_appname:
                 app, _, broken_parts[0] = broken_parts[0].partition('/')
 
         url_buff = [prefix, "/".join(url_quote(p) for p in broken_parts)]
         # Signs the URL if required.  Copy vars into urlvars not to modify it.
-        urlvars = dict(vars) if vars else {}
+        urlvars = {**vars} if vars else {}
         if self.use_signer:
             # Note that we need to sign the non-urlencoded URL, since
             # at verification time, it will be already URLdecoded.
@@ -165,10 +179,10 @@ class URLBuilder:
         scheme_domain = ''
         if scheme is not False:
             if scheme is True:
-                scheme = ctx.scheme
+                scheme = url_ctx.scheme
             elif scheme is None:
                 scheme = ""
             else:
                 scheme += ':'
-            scheme_domain = f'{scheme}//{ctx.domain}'
+            scheme_domain = f'{scheme}//{url_ctx.domain}'
         return f'{scheme_domain}{"".join(url_buff)}'
