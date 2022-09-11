@@ -2,7 +2,7 @@ import os
 import json
 import functools
 from types import SimpleNamespace
-from typing import List, Dict, Callable, Optional, Union, Set
+from typing import List, Dict, Callable, Optional, Union, Set, Tuple
 import dataclasses
 from dataclasses import dataclass
 
@@ -59,11 +59,6 @@ typeStrOrFactory = Union[str, Callable[['AppData'], str]]
 pjoin = os.path.join
 
 
-class RouteMeta(SimpleNamespace):
-    routes_args: List
-    fixtures: List
-
-
 @dataclass
 class AppData:
 
@@ -81,9 +76,9 @@ class AppData:
 
     group_name: str = None
 
-    spa_routes: Dict[str, dict] = dataclasses.field(default_factory=dict)
+    spa_routes: Dict[str, Dict[str, List[SPAPath]]] = dataclasses.field(default_factory=dict)
     routes: Set[globs.Route] = dataclasses.field(default_factory=set)
-    named_routes: dict = dataclasses.field(default_factory=dict)
+    named_routes: Dict[str, globs.Route] = dataclasses.field(default_factory=dict)
 
     as_dict = dataclasses.asdict
 
@@ -92,6 +87,11 @@ class AppData:
             fld = getattr(self, name)
             if callable(fld):
                 setattr(self, name, fld(self))
+
+
+class RouteMeta(SimpleNamespace):
+    routes_args: List[Tuple[tuple, dict]]
+    fixtures: List[str]
 
 
 class BaseApp:
@@ -121,7 +121,7 @@ class BaseApp:
         self._mixins.extend(mixins)
         self.context.extend(*[m.context for m in mixins])
 
-    def _register_route(self, fun, route_args, fixtures=None):
+    def _register_route(self, fun, route_args, fixtures: List[str] = None):
         meta = self._registered.setdefault(
             fun, RouteMeta(routes_args=[], fixtures=[])
         )
@@ -164,63 +164,75 @@ class BaseApp:
             config = self.default_config
 
         context = self.context.clone()
-
         app_data = self.app_data = context.app_data = AppData(**config)
         render_map = app_data.render_map
         exception_handler = app_data.exception_handler
 
         for raw_h, meta, mixin_data in self._iter_registered():
             h = self.make_handler(raw_h, meta.fixtures, context, render_map, exception_handler, mixin_data)
-            spa_component = self._get_spa_component(context, meta.fixtures)
-            if spa_component:
-                prefix = ''
-                if mixin_data:
-                    prefix = f'mxn/{mixin_data.app_name}'
-                spa_component = spa_component.make_component_reference(context, prefix)
+            spa_component = self._get_spa_component_reference(context, meta.fixtures, mixin_data)
             for route_args, route_kw in meta.routes_args:
                 spa: SPA = route_kw.pop('spa', None)
-                route_spa_main_args = None
                 if spa:
-                    if spa_component:
-                        spa_component_routes: dict = app_data.spa_routes.setdefault(spa.name, {})
-                        spa_routes: list = spa_component_routes.setdefault(spa_component, [])
-                        spa_path = SPAPath(route_args[0])
-                        if spa_path.path == spa.main_path:
-                            spa_path.is_main_path = True
-                            route_spa_main_args = [f'pages-api/{spa.name}', *route_args[1:]]
-                        spa_routes.append(spa_path)
-                    # prefix all spa routes with 'spa-pages-api/<spa_name>'
-                    route_args = [f'pages-api/{spa.name}/{route_args[0]}', *route_args[1:]]
-                self._mount_route(h, route_args, route_kw)
-                if route_spa_main_args:
-                    self._mount_route(h, route_spa_main_args, route_kw)
+                    self._register_spa_component_and_mount_api_route(h, route_args, route_kw, spa, spa_component)
+                else:
+                    self._mount_route(h, route_args, route_kw)
 
         # make static/spa_routes.js
         # 'redirect' all spa-routes to 'index'
         self._mount_spa_routes()
 
-        # mount app static
+        # mount static as /{app_name}/static/
+        self._mount_static()
+
+        # mount mixins static as /{app_name}/static/mxn/{mixin_name}/
+        self._mount_mixins_static()
+
+        # register
+        self.reloader.register_app(app_data.app_name, self)
+        context.app_mounted()
+        return context
+
+    def _register_spa_component_and_mount_api_route(
+            self, h: Callable, route_args: List, route_kw: dict,
+            spa: 'SPA', spa_component: str = None
+    ):
+        app_data = self.app_data
+        route_rule, route_rest_args = route_args[0], route_args[1:]
+        route_spa_main_args = None
+        if spa_component:
+            spa_component_routes: dict = app_data.spa_routes.setdefault(spa.name, {})
+            spa_routes: list = spa_component_routes.setdefault(spa_component, [])
+            spa_path = SPAPath(route_rule)
+            if spa_path.path == spa.main_path:  # usually 'index'
+                spa_path.is_main_path = True
+                route_spa_main_args = [f'pages-api/{spa.name}', *route_rest_args]
+            spa_routes.append(spa_path)
+        # prefix all spa routes with 'spa-pages-api/<spa_name>'
+        route_args = [f'pages-api/{spa.name}/{route_rule}', *route_rest_args]
+        self._mount_route(h, route_args, route_kw)
+        if route_spa_main_args:
+            self._mount_route(h, route_spa_main_args, route_kw)
+
+    def _mount_static(self):
+        app_data = self.app_data
         static_rule, static_h = self.static_registry.make_rule_and_handler(
             f'{app_data.static_base_url}/static', app_data.static_folder
         )
         if static_rule is not None:
             self._mount_route(static_h, (static_rule, 'GET', None), {})
 
-        # mount mixins static as /{app_name}/static/mxn/{mixin_name}/
-        for m in self._mixins:
-            m_cfg = m.default_config
-            m_name = m_cfg['app_name']
-            static_base_url = f'{app_data.base_url}/static/mxn/{m_name}'
+    def _mount_mixins_static(self):
+        """Mount mixins static as `/{app_name}/static/mxn/{mixin_app_name}/`."""
+        app_data = self.app_data
+        for mxn in self._mixins:
+            mxn_app_data = AppData(**mxn.default_config)
+            static_base_url = f'{app_data.base_url}/static/mxn/{mxn_app_data.app_name}'
             static_rule, static_h = self.static_registry.make_rule_and_handler(
-                static_base_url, m_cfg['static_folder']
+                static_base_url, mxn_app_data.static_folder
             )
             if static_rule is not None:
                 self._mount_route(static_h, (static_rule, 'GET', None), {})
-
-        # register
-        self.reloader.register_app(app_data.app_name, self)
-        context.app_mounted()
-        return context
 
     def unmount(self):
         app_data = self.app_data
@@ -233,15 +245,21 @@ class BaseApp:
             if root_prefix not in base_urls:
                 self.remove_route(r)
 
-    def _get_spa_component(self, ctx: BaseContext, fixture_keys: List[str]):
+    def _get_spa_component_reference(self, ctx: BaseContext, fixture_keys: List[str], mixin_data: AppData = None):
         if not fixture_keys:
-            return None
+            return
         first = ctx.ask(fixture_keys[0])
-        if isinstance(first, SPAFixture):
-            return first
+        if not isinstance(first, SPAFixture):
+            return
+        spa_component = first
+
+        prefix = ''
+        if mixin_data:
+            prefix = f'mxn/{mixin_data.app_name}'
+        return spa_component.make_component_reference(ctx, prefix)
 
     def _mount_spa_routes(self):
-        spa_routes_map: Dict[str, Dict[str, List[SPAPath]]] = self.app_data.spa_routes
+        spa_routes_map = self.app_data.spa_routes
         if not spa_routes_map:
             return
 
@@ -256,9 +274,9 @@ class BaseApp:
                     self._mount_route(spa_main_handler, (p.path, 'GET', None), {})
 
     def _iter_registered(self):
-        for m in reversed(self._mixins):
-            for raw_h, meta in m._registered.items():
-                yield raw_h, meta, SimpleNamespace(**m.default_config)
+        for mixin in reversed(self._mixins):
+            for raw_h, meta in mixin._registered.items():
+                yield raw_h, meta, AppData(**mixin.default_config)
 
         for raw_h, meta in self._registered.items():
             yield raw_h, meta, None
@@ -329,7 +347,6 @@ class BaseApp:
             app_data.named_routes[name] = route
 
         if is_app_index:
-            #app_data.named_routes['[spa-index]'] = route
             route = self.add_route(
                 path[:-len('/index')] or '/', method, fun, **route_kw
             )
