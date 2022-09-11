@@ -2,14 +2,16 @@ import os
 import json
 import functools
 from types import SimpleNamespace
-from typing import List, Dict
+from typing import List, Dict, Callable, Optional, Union, Set
+import dataclasses
+from dataclasses import dataclass
 
 from . import globs
 from .context import BaseContext
 from .exceptions import FixtureProcessError
 from .reloader import Reloader
 from .static_registry import StaticRegistry
-from .fixture import SPAFixture
+from .fixture import SPAFixture, Fixture
 
 
 def _dummy_exception_handler(ctx: BaseContext, exc: Exception):
@@ -53,6 +55,45 @@ class SPAResponse(dict):
     pass
 
 
+typeStrOrFactory = Union[str, Callable[['AppData'], str]]
+pjoin = os.path.join
+
+
+class RouteMeta(SimpleNamespace):
+    routes_args: List
+    fixtures: List
+
+
+@dataclass
+class AppData:
+
+    app_name: str
+    folder: str
+
+    base_url: typeStrOrFactory = lambda s: f'/{s.app_name}'
+    static_base_url: typeStrOrFactory = lambda s: s.base_url
+    static_folder: typeStrOrFactory = lambda s: pjoin(s.folder, 'static')
+    template_folder: typeStrOrFactory = lambda s: pjoin(s.folder, 'templates')
+    spa_template_folder: typeStrOrFactory = lambda s: pjoin(s.static_folder, 'spa', 'pages')
+
+    render_map: Dict[type, Callable[[BaseContext, dict], str]] = None
+    exception_handler: Callable[[BaseContext, Exception], None] = None
+
+    group_name: str = None
+
+    spa_routes: Dict[str, dict] = dataclasses.field(default_factory=dict)
+    routes: Set[globs.Route] = dataclasses.field(default_factory=set)
+    named_routes: dict = dataclasses.field(default_factory=dict)
+
+    as_dict = dataclasses.asdict
+
+    def __post_init__(self):
+        for name in ['base_url', 'static_base_url', 'static_folder', 'template_folder', 'spa_template_folder']:
+            fld = getattr(self, name)
+            if callable(fld):
+                setattr(self, name, fld(self))
+
+
 class BaseApp:
 
     static_registry = StaticRegistry
@@ -60,37 +101,38 @@ class BaseApp:
     remove_route = staticmethod(globs.app.router.remove)
     reloader = Reloader
     SPAResponse = SPAResponse
+    app_data: AppData
 
     def __init__(
             self,
-            default_config,
+            default_config: dict,
             context: BaseContext,
     ):
         self.default_config = default_config
         self.context = context
-        self._registered = {}
+        self._registered: Dict[Callable, RouteMeta] = {}
         self._mixins: List['BaseApp'] = []
         self.app_data = None
 
     def spa(self, name='main'):
         return SPA(self, name)
 
-    def mixin(self, *mixins):
+    def mixin(self, *mixins: 'BaseApp'):
         self._mixins.extend(mixins)
         self.context.extend(*[m.context for m in mixins])
 
     def _register_route(self, fun, route_args, fixtures=None):
         meta = self._registered.setdefault(
-            fun, SimpleNamespace(routes_args=[], fixtures=[])
+            fun, RouteMeta(routes_args=[], fixtures=[])
         )
         meta.routes_args.append(route_args)
         if fixtures is not None:
             meta.fixtures.extend(fixtures)
 
-    def route(self, rule, method='GET', name=None, **kw):
+    def route(self, rule: str, method='GET', name: str = None, **kw):
         args = (rule, method, name)
 
-        def decorator(h):
+        def decorator(h: Callable):
             fixt = None
             if isinstance(h, Fixtured):
                 fixt = h.fixt
@@ -99,7 +141,7 @@ class BaseApp:
             return h
         return decorator
 
-    def use(self, *fixt):
+    def use(self, *fixt) -> Callable[[Callable], Fixtured]:
         fixt = [self.context.get_or_make_fixture_key(f) for f in fixt]
 
         def decorator(h):
@@ -121,16 +163,12 @@ class BaseApp:
         if config is None:
             config = self.default_config
 
-        render_map: dict = config.get('render_map')
-        exception_handler = config.get('exception_handler')
-
         context = self.context.clone()
-        app_data = self.app_data = context.app_data = SimpleNamespace(
-            spa_routes={},
-            routes=set(),
-            named_routes={},
-            **config
-        )
+
+        app_data = self.app_data = context.app_data = AppData(**config)
+        render_map = app_data.render_map
+        exception_handler = app_data.exception_handler
+
         for raw_h, meta, mixin_data in self._iter_registered():
             h = self.make_handler(raw_h, meta.fixtures, context, render_map, exception_handler, mixin_data)
             spa_component = self._get_spa_component(context, meta.fixtures)
@@ -193,7 +231,7 @@ class BaseApp:
         for r in app_data.routes:
             root_prefix = f"/{r.rule[1:].split('/', 1)[0]}"
             if root_prefix not in base_urls:
-                r.remove()
+                self.remove_route(r)
 
     def _get_spa_component(self, ctx: BaseContext, fixture_keys: List[str]):
         if not fixture_keys:
@@ -226,7 +264,10 @@ class BaseApp:
             yield raw_h, meta, None
 
     @staticmethod
-    def make_handler(h, fixtures, ctx: BaseContext, render_map: dict = None, exception_handler=None, mixin_data=None):
+    def make_handler(
+            h: Callable, fixtures: List[str], ctx: BaseContext,
+            render_map: dict = None, exception_handler=None, mixin_data=None
+    ) -> Callable:
 
         hooks = False
         if fixtures:
@@ -318,4 +359,3 @@ class SPA:
 
     def response(self, **kw):
         return SPAResponse(**kw)
-

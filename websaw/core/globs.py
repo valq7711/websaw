@@ -1,5 +1,6 @@
 import ombott
 from ombott import SimpleConfig
+from ombott.router import Route
 from types import SimpleNamespace
 
 ombott.DefaultConfig.max_memfile_size = 16 * 1024 * 1024

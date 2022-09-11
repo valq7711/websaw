@@ -17,6 +17,8 @@ from .exceptions import HTTP
 
 url_quote = urllib.parse.quote
 
+# TODO move unrelated stuff out of core-folder
+
 
 def redirect(location):
     """our redirect does not delete cookies and headers like bottle.HTTPResponse does;
@@ -209,4 +211,3 @@ def objectify(obj):
 
 def dumps(obj, sort_keys=True, indent=2, ensure_ascii=False):
     return json.dumps(obj, default=objectify, sort_keys=sort_keys, indent=indent, ensure_ascii=ensure_ascii)
-

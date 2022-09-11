@@ -37,6 +37,9 @@ from .fixtures import (
 from .default_context import DefaultContext
 from .default_app import DefaultApp
 
+# convenient alias
+App = DefaultApp
+
 __all__ = (
     'Field',
 
@@ -52,6 +55,7 @@ __all__ = (
     'BaseApp',
     'DefaultContext',
     'DefaultApp',
+    'App',
 
     'HTTP',
     'WebsawException',
