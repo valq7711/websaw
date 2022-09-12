@@ -1,6 +1,3 @@
-import sys
-import os
-
 from . import globs
 from .core_events import core_event_bus, CoreEvents
 from .install import install_args
