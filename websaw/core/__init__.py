@@ -1,4 +1,3 @@
-
 import ombott
 from .globs import request, response
 from ._core import (
@@ -8,7 +7,6 @@ from ._core import (
 )
 
 from .utils import (
-    redirect,
     Cache,
 )
 
@@ -21,7 +19,13 @@ from .render import render
 
 from .exceptions import HTTP, WebsawException
 
+
 abort = ombott.abort
+
+
+def redirect(location):
+    response.headers["Location"] = str(location)
+    raise HTTP(303)
 
 
 __all__ = (
@@ -38,7 +42,6 @@ __all__ = (
     'Fixture',
     'SPAFixture',
 
-    # 'URL',
     'redirect',
     'Cache',
 

@@ -1,7 +1,8 @@
 import ombott
-from ombott import SimpleConfig
-from ombott.router import Route
+from ombott.router import Route  # NOQA
 from types import SimpleNamespace
+
+from websaw.core.utils import make_storage
 
 ombott.DefaultConfig.max_memfile_size = 16 * 1024 * 1024
 
@@ -22,8 +23,8 @@ def _before_request(*args, **kw):
 app.add_hook("before_request", _before_request)
 
 
-@SimpleConfig.keys_holder
-class DefaultConfig(SimpleConfig):
+@make_storage
+class Config:
     apps_folder = 'apps'
     service_folder = ".service"
     service_db_uri = "sqlite://service.storage"
@@ -41,4 +42,4 @@ class DefaultConfig(SimpleConfig):
 
 
 # patched by install.py
-current_config: DefaultConfig = SimpleNamespace()
+current_config = Config()

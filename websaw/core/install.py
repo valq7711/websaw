@@ -4,7 +4,7 @@ import click
 import uuid
 import zipfile
 
-from .globs import current_config, DefaultConfig
+from .globs import current_config
 from .loggers import error_logger
 from .utils import MetaPathRouter
 
@@ -53,8 +53,7 @@ def _get_session_secret(service_folder):
 
 def install_args(kwargs, reinstall_apps=False):
 
-    # DefaultConfig is a factory and returns instance of ombott.common_helpers.NameSpace
-    config: DefaultConfig = DefaultConfig(kwargs)
+    config = current_config
 
     apps_folder = config.apps_folder = os.path.abspath(config.apps_folder)
     config.service_folder = os.path.join(apps_folder, config.service_folder)
@@ -79,7 +78,6 @@ def install_args(kwargs, reinstall_apps=False):
         MetaPathRouter(apps_folder_name)
 
     error_logger.initialize()
-    current_config.__dict__.update(config.__dict__)
 
 
 def reinstall_apps(apps_folder, confirmed):
