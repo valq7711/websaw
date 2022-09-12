@@ -242,7 +242,10 @@ def run(**kwargs):
     except ImportError:
         pyjsaw = None
 
-    pyjsaw_installed = pyjsaw is not None or os.path.exists(os.path.join(globs.current_config.apps_folder, "pyjsaw"))
+    pyjsaw_installed = (
+        pyjsaw is not None
+        or os.path.exists(os.path.join(globs.current_config.apps_folder, "pyjsaw"))
+    )
     if pyjsaw_installed:
         if not (kwargs["admin_mode"] in ("full", "readonly") and Reloader.read_password_hash() is not None):
             click.echo(
