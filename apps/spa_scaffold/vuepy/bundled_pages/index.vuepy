@@ -1,0 +1,49 @@
+
+# Don't compile me
+# import me in vuepy/bundled_pages/__init__.pyj
+# and recompile vuepy/spa_bundle.pyj after changes
+v-def templ:
+    layout:
+        p:'This is spa-part of Index-page'
+        p: 'It was created using pyjsaw, src: vuepy/bundled_pages/index.vuepy'
+        p: 'It is bundled into spa_bundle.pyj which is compiled to static/js/spa_bundle.js'
+        search_box(
+            :current_search = 'current_search',
+            :is_loading='search_loading',
+            @input_search = 'do_search',
+        ):
+        div:
+            '{{current_search}}'
+
+
+v-pyj:
+@{
+
+async import spa_tools
+
+vc = spa_tools.v_collector()
+
+@vc.component()
+class Page(spa_tools.RSVue):
+    def __init__(self):
+        self.name = __name__
+        self.template = templ
+
+    def data(self):
+        return {
+            current_search: 'Some',
+            search_loading: False
+        }
+
+    def do_search(self, txt):
+        self.search_loading = True
+        setTimeout(
+            def():
+                self.current_search = txt
+                self.search_loading = False
+        , 1000)
+
+def make():
+    return Page()
+
+}@

@@ -1,0 +1,13 @@
+layout:
+    p:
+        input(v-model='post_msg'):
+        button(@click='$pu.post([], {post_msg, posted_msgs})'):
+            'Post'
+        div(v-if='posted_msgs && posted_msgs.length'):
+            div: 'Messages:'
+            button(@click='posted_msgs=[]'):
+                'Clear'
+            div(v-for='msg in posted_msgs'):
+                p:'{{msg}}'
+        div(v-else):
+            '[No messages]'
