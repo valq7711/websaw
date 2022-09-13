@@ -15,8 +15,6 @@ from .app import BaseApp
 from .context import BaseContext
 from .fixture import Fixture, SPAFixture
 
-from .render import render
-
 from .exceptions import HTTP, WebsawException
 
 
@@ -44,8 +42,6 @@ __all__ = (
 
     'redirect',
     'Cache',
-
-    'render',
 
     'HTTP',
     'WebsawException',

@@ -13,11 +13,8 @@ from .core import (
     HTTP,
 )
 
-from .fixtures import (
-    Template,
-    UTemplate,
-    SPAComponent,
-)
+from .fixtures import templates
+from .fixtures.templates import SPAComponent
 
 
 class DefaultApp(BaseApp):
@@ -62,11 +59,11 @@ class DefaultApp(BaseApp):
                 if '#' in fx:
                     fx = SPAComponent(fx.replace('#', ''))
                 else:
-                    fx = Template(
+                    fx = templates.YATLTemplate(
                         fx, path=self.default_config['template_folder'], inject={'mixin_name': app_name}
                     )
             elif isinstance(fx, dict):
-                fx = UTemplate(fx)
+                fx = templates.UTemplate(fx)
             fixtures.append(fx)
         return super().use(*fixtures)
 

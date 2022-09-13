@@ -21,9 +21,7 @@ from .core import (
 )
 
 from .fixtures import (
-    Template,
-    UTemplate,
-    SPAComponent,
+    templates,
     Session, GroupSession,
     DAL,
     URL,
@@ -63,8 +61,7 @@ __all__ = (
     'redirect',
     'Cache',
 
-    'Template', 'UTemplate',
-    'SPAComponent',
+    'templates',
     'Session', 'GroupSession',
     'DAL',
     'URL',
