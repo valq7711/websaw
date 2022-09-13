@@ -51,7 +51,7 @@ setup(
         "watchgod",
         "upytl>=0.0.6",
         "voodoodal>=1.0.0",
-        "pyjsaw",
+        # "pyjsaw",
     ],
     python_requires='>=3.7',
     packages=['websaw', 'websaw.core', 'websaw.fixtures'],
