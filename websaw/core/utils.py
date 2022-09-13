@@ -11,21 +11,96 @@ import datetime
 import enum
 import types
 import json
+from typing import TypeVar, Type, Union, Tuple, Iterable, Any, Dict, List
 
-from .globs import response
-from .exceptions import HTTP
 
 url_quote = urllib.parse.quote
 
 # TODO move unrelated stuff out of core-folder
 
 
-def redirect(location):
-    """our redirect does not delete cookies and headers like bottle.HTTPResponse does;
-    it is considered a success, not failure"""
-    response.headers["Location"] = str(location)
-    raise HTTP(303)
+# #### make_storage ##############
 
+class StorageMixin:
+    __slots__ = ()
+
+    def __init__(self, **kw):
+        dct = {**self.__slots_defaults__, **kw}
+        [setattr(self, k, v) for k, v in dct.items()]
+
+    def keys(self) -> List[str]:
+        return [*self.__class__.__slots__]
+
+    def update(self, dct: dict):
+        [setattr(self, k, v) for k, v in dct.items()]
+
+    def __getitem__(self, k):
+        try:
+            return getattr(self, k)
+        except AttributeError:
+            raise KeyError(k)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {k: getattr(self, k) for k in self.__class__.__slots__}
+
+    def items(self) -> Iterable[Tuple[str, Any]]:
+        return ((k, getattr(self, k)) for k in self.__class__.__slots__)
+
+    def get_defaults(self):
+        return {**self.__slots_defaults__}
+
+
+T = TypeVar('T')
+
+
+def make_storage(cls: Type[T]) -> Union[Type[T], Type[StorageMixin]]:
+    """
+    Example:
+
+    ```python
+    @make_slotted
+    class Config:
+        host = '127.0.0.1'
+        port = 8000
+
+    cfg = Config(port=22)
+    cfg = Config(foo=22)  # Attribute error
+
+    cfg.host = '1.2.3.4'
+    cfg.foo = 0  # Attribute error
+    ```
+
+    If some methods required - use mixin:
+
+    ```python
+    @make_slotted
+    class Config(SomeMixin):
+        ...
+    ```
+    """
+    '''
+    if cls is None:
+        return lambda cls: make_storage(cls, **opt)
+    '''
+
+    defaults = {k: v for k, v in cls.__dict__.items() if not k.startswith('__')}
+
+    dct = {
+        '__slots__': [*defaults],
+        '__slots_defaults__': defaults,
+    }
+
+    if cls.__bases__ == (object,):
+        bases = (StorageMixin,)
+    else:
+        if any('__slots__' not in c.__dict__ for c in cls.__bases__):
+            raise RuntimeError('Bases should have __slots__ attr.')
+        bases = tuple([StorageMixin, *cls.__bases__])
+
+    return type(cls.__name__, bases, dct)
+
+
+# #### MetaPathRouter ##############
 
 class MetaPathRouter:
     """
