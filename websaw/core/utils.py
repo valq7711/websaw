@@ -147,6 +147,7 @@ def safely(func, exceptions=(Exception,), log=False, default=None):
         return func()
     except exceptions as err:
         if log:
+            # TODO getlogger
             logging.warn(str(err))
         return default() if callable(default) else default
 
