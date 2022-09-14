@@ -8,6 +8,7 @@ eggs/
 .eggs/
 *.egg-info/
 *.egg
+*.zip
 MANIFEST
 
 # Unit test / coverage reports
@@ -29,8 +30,19 @@ venv.bak/
 
 ##############################################
 .vscode/
+*.code-workspace
+tox.ini
+
+password.txt
+websaw/utils/
+
 __*
 !__init__.py
 !__main__.py
-apps/
-websaw/utils/
+
+apps/*-dev
+apps/*-test
+apps/*_dev
+apps/*_test
+apps/*/databases
+apps/.*

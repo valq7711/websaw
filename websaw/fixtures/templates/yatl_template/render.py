@@ -2,7 +2,7 @@ import renoir
 import renoir.constants
 import renoir.writers
 
-from .utils import safely, Cache
+from websaw.core.utils import safely, Cache
 
 
 class RenoirXMLEscapeMixin:

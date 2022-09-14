@@ -1,3 +1,5 @@
+# this app was made from todo-app of py4web framework https://github.com/web2py/py4web/tree/master/apps/todo
+
 import os
 from websaw import DefaultContext, DefaultApp, DAL, Cache, Field, HTTP
 from websaw.core import Fixture
@@ -78,4 +80,3 @@ def uuid(ctx: Context):
 
 
 app.mount()
-

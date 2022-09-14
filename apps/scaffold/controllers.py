@@ -1,8 +1,7 @@
-import os
-
-from websaw import DefaultApp, DefaultContext, Template, Reloader
+from websaw import DefaultApp, DefaultContext, Reloader
 from websaw.core import Fixture
 from websaw.fixtures import Env
+from websaw.templates import YATLTemplate
 import ombott
 
 from ..mixins import info
@@ -24,7 +23,7 @@ class LastVisited(Fixture):
 # extend default context with our fixture and info-mixin context
 class Context(info.Context, DefaultContext):
     track_visited = LastVisited()
-    welcome_templ_overwrite = Template('welcome.html')
+    welcome_templ_overwrite = YATLTemplate('welcome.html')
     env = {
         'foo': 'foo_value',
         'templ_dir': Reloader.package_folder_path(__package__, 'templates')

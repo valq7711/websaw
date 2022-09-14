@@ -5,17 +5,15 @@ from typing import Any, Optional, List, Dict, Union
 from .exceptions import FixtureProcessError
 from . import globs
 from .fixture import Fixture
+from . import app
 
 
 class IContextSate:
-
     in_use: Dict[str, Fixture]
     in_use_stack: List[Fixture]
     uninitialized_hooks_in_stack: set
     output: Any
     exception_stack: List[Exception]
-    shared_data: dict
-
 
 class Local(threading.local):
     state: IContextSate
@@ -57,7 +55,7 @@ class BaseContext(metaclass=MetaContext):
 
     request = globs.request
     response = globs.response
-    app_data: Optional[SimpleNamespace] = None
+    app_data: 'app.AppData' = None
 
     @classmethod
     def cctx(cls) -> 'BaseContext':
@@ -194,7 +192,6 @@ class BaseContext(metaclass=MetaContext):
             uninitialized_hooks_in_stack=set(),
             output=None,
             exception_stack=[],
-            shared_data={}
         )
         local.env = {**self._env}
         local.in_process = True
