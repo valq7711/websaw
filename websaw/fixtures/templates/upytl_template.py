@@ -26,8 +26,8 @@ class UTemplate(Fixture):
             __vars__=output,
             env=env,
             **self.inject,
-            **env.get("template_context", {}),
+            **env.get("default_template_context", {}),
             **output,
         )
-        u = UPYTL(global_ctx=self.global_ctx)
-        ctx.output = u.render(self.template, context)
+        u = UPYTL(global_ctx={'URL': ctx.URL})
+        ctx.output = u.render(self.template, context, indent=0)

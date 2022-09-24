@@ -1,0 +1,35 @@
+timestamp: 2022-09-24T21:55:08.003013
+CREATE TABLE "user"(
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "username" CHAR(512) UNIQUE,
+    "first_name" CHAR(512),
+    "last_name" CHAR(512),
+    "email" CHAR(512) UNIQUE,
+    "sso_id" CHAR(512),
+    "action_token" CHAR(512),
+    "last_password_change" TIMESTAMP,
+    "password" CHAR(512),
+    "is_blocked" CHAR(1)
+);
+success!
+timestamp: 2022-09-24T21:55:08.012679
+CREATE TABLE "role"(
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "role" CHAR(512),
+    "desc" CHAR(512)
+);
+success!
+timestamp: 2022-09-24T21:55:08.019636
+CREATE TABLE "membership"(
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "user_id" INTEGER REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE  ,
+    "role_id" INTEGER REFERENCES "role" ("id") ON DELETE CASCADE ON UPDATE CASCADE  
+);
+success!
+timestamp: 2022-09-24T21:55:08.028152
+CREATE TABLE "profile"(
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "user_id" INTEGER REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE  ,
+    "image" CHAR(512)
+);
+success!
