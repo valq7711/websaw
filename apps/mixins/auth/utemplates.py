@@ -1,7 +1,7 @@
 from upytl import SlotTemplate, html as h 
 
 from upytl_standard import HTMLPage, StandardNavBar 
-
+from .auth_components import AuthFlash
 # flake8: noqa E226
 
 index = {
@@ -9,12 +9,13 @@ index = {
         SlotTemplate(Slot='nav'):{
             StandardNavBar(menu={'menu'}, user= {'user'}, buttons={'buttons'}): '',
         },
-        SlotTemplate(Slot='flash'):{},
-        
+        SlotTemplate(Slot='flash'):{
+            AuthFlash(flash={'form_options["flash"]'}):{},
+        },
         SlotTemplate(Slot='content'):{
             h.Div(Class='box'):{
                 h.Div(Class='title is-4'): 'Welcome [[user]] from the default_template_context',
-                h.Div(Class='title is-5'): 'This is the Scaffold App Template',
+                h.Div(Class='title is-5'): 'This is the App Template',
                 h.Div(For='f in msg'):{
                     h.Text():'[[ f ]] : [[msg[f] ]]',
                 }

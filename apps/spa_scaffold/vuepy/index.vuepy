@@ -1,6 +1,6 @@
 '<!DOCTYPE html>'
 html:
-    title: 'spa-demo'
+    title: 'spa-scaffold'
     meta(
         charset="UTF-8",
         data-app_base="[[=URL()]]",
