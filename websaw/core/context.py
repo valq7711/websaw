@@ -119,7 +119,10 @@ class BaseContext(metaclass=MetaContext):
     def __getattr__(self, k):
         local = self._local
         if not local.in_process:
-            return self._fixt[k]
+            try:
+                return self._fixt[k]
+            except KeyError:
+                raise AttributeError(k)
         state = local.state
         in_use = state.in_use
         fixt_value = in_use.get(k)
@@ -127,7 +130,7 @@ class BaseContext(metaclass=MetaContext):
             try:
                 fixt = self._fixt[k]
             except KeyError:
-                raise AttributeError(f'{k}')
+                raise AttributeError(k)
             self._fixture_prepare_for_use(fixt)
             try:
                 value = fixt.take_on(self)
