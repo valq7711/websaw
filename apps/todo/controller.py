@@ -10,9 +10,14 @@ from .todo_db import db
 from .. common.common_utils import SQLForm
 
 # extend default context with our fixture
+class DBRegistry(Fixture):
+    def __init__(self):
+        self.dbs_keys = set()
+
 class Context(DefaultContext):
     db=db
-    
+    db_reg = DBRegistry()
+
 ctxd = Context()
 app = DefaultApp(ctxd, name=__package__)
 
