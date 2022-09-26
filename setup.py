@@ -51,6 +51,8 @@ setup(
         "watchgod",
         "upytl>=0.0.6",
         "voodoodal>=1.0.0",
+        "upytl-standard>=0.0.3",
+        "pillow",
         # "pyjsaw",
     ],
     python_requires='>=3.7',
