@@ -51,53 +51,6 @@ class BlogFlash(Component):
             session['flash_message'] = ''
         return {**rprops, 'flash':flash, 'message':message, 'f_type':flash_class}
 
-class BlogNavBar(Component):
-    props = dict(
-        menu = [],
-        user = '',
-        buttons=[]
-    )
-    template = {
-        h.Nav(Class='navbar is-light', Role='navigation'): {
-            h.Div(Class='navbar-brand'): {
-                h.A(Class='navbar-item', href="https://bulma.io"): '',   
-            },
-            h.Div(Id="navbarBasicExample", Class="navbar-menu"):{
-                h.Div(Class='navbar-start'):{
-                    h.Template(For='item in menu'):{
-                        NavBarItem(
-                            item = {'item'},
-                        ):'',
-                    },
-                },
-                h.Div(Class='navbar-end'): {
-                    h.Div(Class='navbar-item'): {
-                        h.Div(): 'Welcome [[ user ]]',
-                    },
-                    h.Div(Class='navbar-item'): {
-                        h.Template(If = 'not buttons'):{
-                            h.Div(): '',
-                        },
-                        h.Template(Else = ''):{
-                            h.Div(Class='buttons'):{
-                                h.A(For = 'b in buttons',Class={'b.get("class", "button")'}, Href={'b.get("href", "index")'}):'[[ b["name"] ]]',
-                            },
-                        }        
-                    }
-                }
-            }
-        }    
-    }
-    def get_context(self, rprops):
-        ctx = DefaultContext.cctx()
-        buttons = rprops['buttons']
-        for i, j in enumerate(buttons):
-            print('button', buttons[i])
-            ref = buttons[i].get('href')
-            buttons[i]['href'] = str(ctx.URL(ref))
-            
-        print('buttons', buttons)
-        return{**rprops}
 
 class BlogPage(Component):
     props = dict(
@@ -190,7 +143,7 @@ class BlogPost(Component):
         if user and user['id'] == post.post.author.id:
             update_ref = ctx.URL('post', vars={'action':'update','pid': post.post.id})
             delete_ref = ctx.URL('post', vars={'action':'delete','pid': post.post.id})
-        p_image = ctx.URL('static/images/',post.profile.image)#+ post.profile.image
+        p_image = ctx.URL('static/images/', post.profile.image)
         u_href = ctx.URL('index', vars={'filter_by':'user','uid': post.post.author.id})
         
         return{**rprops, 'profile_image':p_image,
