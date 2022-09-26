@@ -18,6 +18,14 @@ def update_icecube(*a, **kw):
 class DAL(_DAL, Fixture):
 
     reconnect_on_request = True
+    def init(self):
+        self.dbs_keys = set()
+    
+    def app_mounted(self, ctx):
+        db_reg = ctx.ask('db_reg')
+        if db_reg:
+            self_key = ctx.get_or_make_fixture_key(self)
+            db_reg.dbs_keys.add(self_key)
 
     def take_on(self, ctx):
         if self.reconnect_on_request:
