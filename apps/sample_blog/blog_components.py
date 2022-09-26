@@ -6,6 +6,55 @@ from upytl import (
 from . import settings
 from upytl_standard import NavBarItem, StandardField
 
+
+class BlogNavBar(Component):
+    props = dict(
+        menu = [],
+        user = '',
+        buttons=[]
+    )
+    template = {
+        h.Nav(Class='navbar is-light', Role='navigation'): {
+            h.Div(Class='navbar-brand'): {
+                h.A(Class='navbar-item', href="https://bulma.io"): '',   
+            },
+            h.Div(Id="navbarBasicExample", Class="navbar-menu"):{
+                h.Div(Class='navbar-start'):{
+                    h.Template(For='item in menu'):{
+                        NavBarItem(
+                            item = {'item'},
+                        ):'',
+                    },
+                },
+                h.Div(Class='navbar-end'): {
+                    h.Div(Class='navbar-item'): {
+                        h.Div(): 'Welcome [[ user ]]',
+                    },
+                    h.Div(Class='navbar-item'): {
+                        h.Template(If = 'not buttons'):{
+                            h.Div(): '',
+                        },
+                        h.Template(Else = ''):{
+                            h.Div(Class='buttons'):{
+                                h.A(For = 'b in buttons',Class={'b.get("class", "button")'}, Href={'b.get("href", "index")'}):'[[ b["name"] ]]',
+                            },
+                        }        
+                    }
+                }
+            }
+        }    
+    }
+    def get_context(self, rprops):
+        ctx = DefaultContext.cctx()
+        buttons = rprops['buttons']
+        for i, j in enumerate(buttons):
+            print('button', buttons[i])
+            ref = buttons[i].get('href')
+            buttons[i]['href'] = str(ctx.URL(ref))
+            
+        print('buttons', buttons)
+        return{**rprops}
+
 class BlogFlash(Component):
     props = dict(
         flash = None,
