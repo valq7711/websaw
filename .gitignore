@@ -47,6 +47,9 @@ apps/*_test
 apps/*/databases/*
 !apps/*/databases/x
 !apps/*/databases/README
+apps/mixins/*/databases/*
+!apps/mixins/*/databases/x
+!apps/mixins/*/databases/README
 apps/*/static/images/*
 !apps/*/static/images/default.jpg
 apps/.*
