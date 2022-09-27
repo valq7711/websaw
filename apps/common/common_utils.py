@@ -63,7 +63,7 @@ class SQLGrid(BaseGrid):
             r_btns.append('delete')
             row_buttons.append(
                 '<a class="button is-link is-light is-small" href="%s"><i class="fas fa-trash"></i>&nbsp; Delete</a>' % ( self.ctx.URL('actions', vars=dict(action='delete', table=self.tablename, id=row.id)))
-            )
+           )
             
         self.r_buts = ",".join(r_btns)
         return row_buttons

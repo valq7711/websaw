@@ -11,10 +11,10 @@ todo_template = {
             ]):{}
         },
         SlotTemplate(Slot='flash'): {},
-
+        
         SlotTemplate(Slot='content'):{
             h.Template():{
-
+                
                 h.Section(Class='section'):{
                     h.Div(Class='contianer'):{
                         h.Div(Class='columns'):{
@@ -25,18 +25,18 @@ todo_template = {
                                 h.Div(Class='notification is-primary'): 'You currently have [[items_count]] items in your TODO list ',
                             }
                         },
-
+                        
                         h.Template(If='show_form'):{
                             StandardForm(fields={'form_options["fields"]'}):{},
-                        },
+                        },    
                         h.Template(Else=''):{
                             h.Div(Class='column'):{
                                 TodoList(list={'items'}):{},
-                            }
+                            }    
                         }
-                    }
-                }
+                    }            
+                }        
             }
         }
     }
-}
+}    

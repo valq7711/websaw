@@ -10,8 +10,13 @@ from .todo_db import db
 from .. common.common_utils import SQLForm
 
 # extend default context with our fixture
+class DBRegistry(Fixture):
+    def __init__(self):
+        self.dbs_keys = set()
+
 class Context(DefaultContext):
     db=db
+    db_reg = DBRegistry()
 
 ctxd = Context()
 app = DefaultApp(ctxd, name=__package__)
@@ -33,7 +38,7 @@ def index(ctx: Context):
 def index(ctx: Context):
     session = ctx.session
     db = ctx.db
-
+    
     query = ctx.request.query.decode()
     action = query.get("action")
     if not action:
@@ -41,23 +46,23 @@ def index(ctx: Context):
     else:
         list_items = db(db.todo).select()
         list_count = len(list_items)
-
+        
         form = SQLForm(db.todo) #intialise our form
         if action == 'new':
             if form.process(ctx, db, db.todo, None).accepted:
                 if ctx.request.method == 'POST':
                     redirect(ctx.URL('index'))
-
+        
         if action == 'update':
             pid = query.get('pid', None)
             if not pid:
                 redirect(ctx.URL('index'))
             todo = db(db.todo.id == int(pid)).select().first()
-
+            
             if form.process(ctx, db, db.todo, todo).accepted:
                 if ctx.request.method == 'POST':
                     redirect(ctx.URL('index'))
-
+    
         if action == 'delete':
             pid = query.get('pid', None)
             if not pid:
@@ -68,5 +73,6 @@ def index(ctx: Context):
             db(db.todo.id == pid).delete()
             db.commit()
             redirect(ctx.URL("index"))
-
+        
         return dict(show_form=True, form_options = form.get_options(), items_count=list_count, items = list_items.as_dict(), session=session)
+

@@ -44,5 +44,9 @@ apps/*-dev
 apps/*-test
 apps/*_dev
 apps/*_test
-apps/*/databases
+apps/*/databases/*
+!apps/*/databases/x
+!apps/*/databases/README
+apps/*/static/images/*
+!apps/*/static/images/default.jpg
 apps/.*
