@@ -114,6 +114,7 @@ def db_admin_new(ctx: Context):
         tbls = {}
         flds = []
         for fld in db[tbl]:
+            fld.readable = fld.writable = True
             flds.append(fld.name)
         href = ctx.URL('table_admin', vars={"caller":"db_admin","cdb":cdb, "table":tbl})
         tbls["name"] = '<a class="tag is-link" href="%s"><i class="fas fa-list text-info"></i>&nbsp;%s</a>' %(
@@ -190,6 +191,7 @@ def table_admin(ctx: Context):
     print('Flash message is ', session.get('flash_message'))
     flash = ctx.flash
     navbar = ctx.navbar
+    menu = ctx.menu
     query = ctx.request.query.decode()
     cdb = session.get('cdb')
     table = query.get('table', None)
@@ -213,6 +215,8 @@ def action(ctx: Context):
     session = ctx.session
     flash=ctx.flash
     navbar = ctx.navbar
+    menu = ctx.menu
+    
     query = ctx.request.query.decode()
     action = query.get("action")
     
@@ -243,6 +247,9 @@ def action(ctx: Context):
             if not id:
                 print('No Id')
                 redirect(ctx.URL('index'))
+            for fld in db[table]:
+                fld.readable = fld.writable = True
+            
             todo = db(db[table].id == int(id)).select().first()
             
             if form.process(ctx, db, db[table], todo).accepted:
@@ -255,6 +262,10 @@ def action(ctx: Context):
             if not id:
                 flash.set(ctx, 'None or invalide id supplied', 'danger')
                 redirect(ctx.URL('index'))
+            
+            for fld in db[table]:
+                fld.readable = fld.writable = True
+            
             todo = db(db[table].id == int(id)).select().first()
             
             if form.process(ctx, db, db[table], todo).accepted:

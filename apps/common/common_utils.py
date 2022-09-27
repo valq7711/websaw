@@ -6,7 +6,8 @@ from websaw.base_grid import BaseGrid
 import datetime
 
 class SQLForm(BaseForm):
-                
+
+    
     def get_options(self, *args, **kw):
         # options expected by concrete upytl form-component goes here
         # so we have common processing logic
@@ -16,20 +17,61 @@ class SQLForm(BaseForm):
             
             # so we passed in a table for an add so we need to set up some dummy self.fields
             # that we will use instead of the actual self.fields as they dont exist
-            
+            print('We have hasattr fields')
             all_fields=[]    
             for var in self.vars:
                 all_fields.append(self.fields[var])
+            print('All fields', all_fields)
+            
             for field in all_fields:
+                print('Field type in for ', field.type  )
                 if not field.type == 'id':
-                    myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
-                    myfields.append(myfield)
+                    if field.type.startswith('reference'):
+                        try:
+                            table = field.requires.ktable
+                            format = self.db[table]._format[2:-2]
+                            options = []
+                            for row in self.db().select(self.db[table].id, self.db[table][format]):
+                                option = {}
+                                if row.id == self.vars[field.name]:
+                                    option = dict(option=row[format], value=row.id, is_selected = row.id)
+                                else:
+                                    option = dict(option=row[format], value=row.id, is_selected = None)
+                                options.append(option)
+                            print('Options ate ', options)
+                                            
+                            myfield = dict(name=field.name,
+                                        label=field.label,
+                                        type='select',
+                                        value=self.vars[field.name],
+                                        error=self.errors.get(field.name, ''),
+                                        options = options)
+                        except:
+                            myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
+
+                        finally:
+                            myfields.append(myfield)
+                    
+                    else:    
+                        myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
+                        myfields.append(myfield)
+                    
+                    print('MyFields are ', myfields)
+                    
                 else:
                     continue    
         else:
             for field in self.fields:
                 if not field.type == 'id':
-                    myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
+                    print('Field type in else', field.type)
+                    if field.type.startswith('reference'):
+                        print('Ktable2', field.requires.ktable)
+                        myfield = dict(name=field.name, label=field.label, type='reference', value=self.vars[field.name], error=self.errors.get(field.name, ''))
+                    else:
+                        myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
+                    
+                    print('MyFields are ', myfields)
+                    
                     myfields.append(myfield)
                 else:
                     continue

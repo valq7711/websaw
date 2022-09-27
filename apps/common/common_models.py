@@ -59,7 +59,7 @@ class AuthModel(DAL):
         db.user.email.requires = [IS_EMAIL(), IS_NOT_IN_DB(db, 'user.email')]
         db.membership.user_id.requires = IS_IN_DB(db,'user.id', 'user.email')
         db.membership.role_id.requires = IS_IN_DB(db,'role.id', 'role.desc')
-
+        db.profile.user_id.requires = IS_IN_DB(db, 'user.id', 'user.email')
     # special hooks
     def on_action(tbl, hook, *args):
         """Convenient common hook for all before/after_insert/update/delete actions."""

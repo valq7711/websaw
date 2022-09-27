@@ -1,5 +1,5 @@
 from upytl import Slot, SlotTemplate, Component, html as h
-from upytl_standard import HTMLPage, StandardNavBar, ViewOnlyForm, StandardForm 
+from upytl_standard import HTMLPage, StandardNavBar, StandardForm, ViewOnlyForm
 from .dbadmin_components import DTCrud, DbAdminGrid, Flash
 
 dbadmin_template={
