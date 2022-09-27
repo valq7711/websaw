@@ -1,16 +1,12 @@
 import os
 from websaw.core import Fixture
 from websaw import BaseContext, DefaultContext, XAuth
+from websaw.fixtures.dbregistry import DBRegistry
 from . import settings
 from PIL import Image
 from ..mixins import auth
 from .blog_db import db
 from .menus import menus
-
-
-class DBRegistry(Fixture):
-    def __init__(self):
-        self.dbs_keys = set()
 
 class GetNavbar(XAuth):
     
@@ -69,7 +65,6 @@ class Context(auth.Context, DefaultContext):
         'default_template_context': dict(menu = ''),
     }
     db = db
-    db_reg = DBRegistry()
-    navbar=navbar
+    db_registry = DBRegistry()
     menus = menu
     

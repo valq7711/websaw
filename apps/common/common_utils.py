@@ -68,6 +68,13 @@ class SQLGrid(BaseGrid):
         self.r_buts = ",".join(r_btns)
         return row_buttons
 
+    def build_row_data(self, row):
+        db = self.db
+        table = self.table
+        for col in self.fields:
+            if db[table][col].type.startswith('reference'):
+                row[col] = db[table][col].represent(row[col], row)
+        return row
 
     def get_options(self, *args, **kw):
         
@@ -88,6 +95,7 @@ class SQLGrid(BaseGrid):
         rows = self.db(self.db[tablename]).select()
         data_rows=[]
         for row in rows:
+            test = self.build_row_data(row)
             row_buttons = self.build_row_buttons(row)
             row['actions'] = row_buttons
             data_rows.append(row.as_dict())

@@ -4,6 +4,7 @@ import ombott
 from websaw import DefaultApp, DefaultContext
 from websaw.core import Fixture
 from websaw.fixtures import XAuth
+from websaw.fixtures.dbregistry import DBRegistry
 from . import settings
 from PIL import Image
 
@@ -27,11 +28,6 @@ def cleanup_image(image_path):
         os.remove(image_path, dir_fd=None)
     except:
         print('Could not find file to remove', image_path)
-
-
-class DBRegistry(Fixture):
-    def __init__(self):
-        self.dbs_keys = set()
 
 
 class GetNavbar(XAuth):
@@ -133,7 +129,7 @@ class Context(DefaultContext):
     auth = auth
     navbar = navbar
     flash = flash
-    db_reg = DBRegistry()
+    db_registry = DBRegistry()
 
 ctxd = Context()
 
