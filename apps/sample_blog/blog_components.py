@@ -6,50 +6,6 @@ from upytl import (
 from . import settings
 from upytl_standard import NavBarItem, StandardField
 
-class BlogFlash(Component):
-    props = dict(
-        flash = None,
-        message = None,
-        f_type=None
-        )
-    template = {
-        h.Template():{
-            h.Div(If='flash', Class='{f_type}'):{
-                h.Span():'[[message]]',
-            h.Button(Class='delete'): None,
-            
-            },
-        },
-        h.Script():
-            """
-            document.addEventListener('DOMContentLoaded', () => {
-                (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
-                    const $notification = $delete.parentNode;
-                    $delete.addEventListener('click', () => {
-                    $notification.parentNode.removeChild($notification);
-                    });
-                });
-            });
-            """
-        
-    }
-    def get_context(self, rprops):
-        ctx = DefaultContext.cctx()
-        session = ctx.session
-        flash = False
-        f_message = session.get('flash_message', None)
-        message = 'No Flash Message'
-        flash_class = "notification has-text-centered is-info"
-        if f_message:
-            message = f_message.get('message', '')
-            f_type = f_message.get('_class', None)
-            
-            if f_type:
-                flash_class = "notification has-text-centered " + "is-" + f_type
-                
-            flash = True
-            session['flash_message'] = ''
-        return {**rprops, 'flash':flash, 'message':message, 'f_type':flash_class}
 
 class BlogNavBar(Component):
     props = dict(
@@ -98,6 +54,52 @@ class BlogNavBar(Component):
             
         print('buttons', buttons)
         return{**rprops}
+
+class BlogFlash(Component):
+    props = dict(
+        flash = None,
+        message = None,
+        f_type=None
+        )
+    template = {
+        h.Template():{
+            h.Div(If='flash', Class='{f_type}'):{
+                h.Span():'[[message]]',
+            h.Button(Class='delete'): None,
+            
+            },
+        },
+        h.Script():
+            """
+            document.addEventListener('DOMContentLoaded', () => {
+                (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+                    const $notification = $delete.parentNode;
+                    $delete.addEventListener('click', () => {
+                    $notification.parentNode.removeChild($notification);
+                    });
+                });
+            });
+            """
+        
+    }
+    def get_context(self, rprops):
+        ctx = DefaultContext.cctx()
+        session = ctx.session
+        flash = False
+        f_message = session.get('flash_message', None)
+        message = 'No Flash Message'
+        flash_class = "notification has-text-centered is-info"
+        if f_message:
+            message = f_message.get('message', '')
+            f_type = f_message.get('_class', None)
+            
+            if f_type:
+                flash_class = "notification has-text-centered " + "is-" + f_type
+                
+            flash = True
+            session['flash_message'] = ''
+        return {**rprops, 'flash':flash, 'message':message, 'f_type':flash_class}
+
 
 class BlogPage(Component):
     props = dict(
@@ -190,7 +192,7 @@ class BlogPost(Component):
         if user and user['id'] == post.post.author.id:
             update_ref = ctx.URL('post', vars={'action':'update','pid': post.post.id})
             delete_ref = ctx.URL('post', vars={'action':'delete','pid': post.post.id})
-        p_image = ctx.URL('static/images/',post.profile.image)#+ post.profile.image
+        p_image = ctx.URL('static/images/', post.profile.image)
         u_href = ctx.URL('index', vars={'filter_by':'user','uid': post.post.author.id})
         
         return{**rprops, 'profile_image':p_image,

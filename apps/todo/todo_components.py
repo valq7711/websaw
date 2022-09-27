@@ -10,7 +10,7 @@ class TodoNavBar(Component):
     template = {
         h.Nav(Class='navbar is-dark', Role='navigation'): {
             h.Div(Class='navbar-brand'): {
-                h.A(Class='navbar-item', href="https://bulma.io"): '',
+                h.A(Class='navbar-item', href="https://bulma.io"): '',   
             },
             h.Div(Id="navbarBasicExample", Class="navbar-menu"):{
                 h.Div(Class='navbar-start'):{},
@@ -32,13 +32,13 @@ class TodoNavBar(Component):
                                     }
                                 }
                             },
-                        }
+                        }        
                     }
                 }
             }
         }
-    }
-
+    }    
+    
 class TodoItem(Component):
     props = dict(
         item = None,
@@ -48,33 +48,33 @@ class TodoItem(Component):
     )
     template = {
         h.Link(rel="stylesheet", type="text/css", href="static/css/my.css"):None,
-
+                
         h.Article(Class="media content-section"):{
             h.Div(Class="media-content"):{
                 h.Div(Class='column has-text-right'):{
                     h.P(Class='content'):{
                         h.P():{
                             h.Small(Class="text-muted"): ' Last Action on [[item["date_added"].strftime("%B %d, %Y")]] ',
-                            h.Small(): ' at [[item["date_added"].strftime("%H:%M")]]',
+                            h.Small(): ' at [[item["date_added"].strftime("%H:%M")]]',    
                         },
                     },
-                },
+                },    
                 h.Div(Class='columns'):{
                     h.Div(Class='column is-8'):{
-                        h.H2(Class="title is-size-4"):'[[ item["item"] ]]',
+                        h.H2(Class="title is-size-4"):'[[ item["item"] ]]',    
                     },
                     h.Div(Class='column buttons is-4 has-text-right'):{
                         h.A(If='update_ref',Class='button is-small is-success', href={'update_ref'}):'Update',
                         h.A(If='delete_ref', Class='button is-small is-danger' , href={'delete_ref'}): 'Delete',
-
+                    
                     }
 
                 },
                 h.Div(Class='column'):{
                     h.P(Class="article-content"):'[[ item["notes"] ]]',
                 }
-
-
+                
+                        
             }
         }
     }
@@ -83,14 +83,14 @@ class TodoItem(Component):
         item = rprops['item']
         update_ref = None
         delete_ref = None
-
+        
         update_ref = ctx.URL('todo', vars={'action':'update','pid': item['id']})
         delete_ref = ctx.URL('todo', vars={'action':'delete','pid': item['id']})
-
+        
         return{**rprops,
                 'update_ref':update_ref,
                 'delete_ref':delete_ref,
-              }
+              } 
 
 
 
@@ -106,4 +106,5 @@ class TodoList(Component):
                 ):'',
             }
         }
-    }
+    }    
+
