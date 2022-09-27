@@ -11,14 +11,14 @@ from .todo_db import db
 from .. common.common_utils import SQLForm
 from .. common.common_utils import SQLGrid
 
-class DBRegistry(Fixture):
-    def __init__(self):
-        self.dbs_keys = set()
+#class DBRegistry(Fixture):
+#    def __init__(self):
+#        self.dbs_keys = set()
 
 # extend default context with our fixture
 class Context(DefaultContext):
     db=db
-    db_reg = DBRegistry()    
+    db_registry = DBRegistry()    
 
     
 ctxd = Context()
