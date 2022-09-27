@@ -1,5 +1,7 @@
 from websaw import DefaultApp, DefaultContext, redirect
 from websaw.core import Fixture
+from websaw.fixtures.dbregistry import DBRegistry
+
 import ombott
 
 from . import todo_templates as tt
@@ -8,15 +10,10 @@ ombott.default_app().setup(dict(debug=True))
 
 from .todo_db import db
 from .. common.common_utils import SQLForm
-
-# extend default context with our fixture
-class DBRegistry(Fixture):
-    def __init__(self):
-        self.dbs_keys = set()
-
+db_reg = DBRegistry()
 class Context(DefaultContext):
     db=db
-    db_reg = DBRegistry()
+    db_reg=db_reg
 
 ctxd = Context()
 app = DefaultApp(ctxd, name=__package__)

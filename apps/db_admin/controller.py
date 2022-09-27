@@ -1,7 +1,7 @@
 from websaw import DefaultApp, DefaultContext
 from websaw.core import Fixture, redirect
 from websaw.fixtures import Env, XAuth
-
+from websaw.fixtures.dbregistry import DBRegistry
 import ombott
 
 from . import dbadmin_templates as dat
@@ -15,10 +15,6 @@ from .. common.common_fixtures import GetNavbar
 
 from ..mixins import auth
 import json
-
-class DBRegistry(Fixture):
-    def __init__(self):
-        self.dbs_keys = set()
 
 class GetUserMenus(XAuth):
     
@@ -61,9 +57,9 @@ class Context(auth.Context, DefaultContext):
         'default_template_context': dict(buttons = ''),
         'default_template_context': dict(menu = ''),
     }
-    db_reg = DBRegistry()    
     menu = menu
-    
+    db_registry = DBRegistry()
+
 ctxd = Context()
 app = DefaultApp(ctxd, name=__package__)
 
@@ -84,7 +80,9 @@ def db_admin_new(ctx: Context):
     menu = ctx.menu
     db = None
     cdb = None
-    dbs = list(ctx.db_reg.dbs_keys)
+    print('CTX db_registry is ', ctx.db_registry)
+    dbs = list(ctx.db_registry.db_keys  )
+    print('DBS', dbs)
     ctx.session['dbs'] = dbs
     
     if len(dbs) > 1:
@@ -101,12 +99,12 @@ def db_admin_new(ctx: Context):
     #if not ctx.auth.has_membership('admin'):
     #    flash.set(ctx, 'You do NOT have Admin access rights !!!', 'danger')
     
-    if not cdb and not ctx.db_reg.dbs_keys: ### so no database to use here ### 
+    if not cdb and not ctx.db_registry.db_keys: ### so no database to use here ### 
         flash.set('There are no databases to administor. Please check your connections', 'danger')
     if cdb:
         db = ctx.ask(cdb)
     else:
-        cdb = list(ctx.db_reg.dbs_keys)[0] ### get the first element of the set
+        cdb = list(ctx.db_registry.db_keys)[0] ### get the first element of the set
         db = ctx.ask(cdb)        
     cols = [{ "data": "name" },{ "data": "fields" }]
     headers=['Table','Fields']

@@ -1,5 +1,6 @@
 from websaw import DefaultApp, DefaultContext, redirect
 from websaw.core import Fixture
+
 import ombott
 
 from . import grid_templates as gt
@@ -18,7 +19,6 @@ from .. common.common_utils import SQLGrid
 # extend default context with our fixture
 class Context(DefaultContext):
     db=db
-    db_registry = DBRegistry()    
 
     
 ctxd = Context()
