@@ -13,13 +13,12 @@ welcome =  {
             },
             h.Body():{
                 h.Div(Class='box'):{
-                    h.Div(Class='title is-5'):'This is the MIXIN template',
+                    h.Div(Class='title is-5'):'This is the INFO MIXIN template',
                     h.Div(Class='title is-6'):'[[msg]]',
                 }
             },    
             h.Footer():{
                 h.Div(): 'This is the footer',
             }
-
         }
     }

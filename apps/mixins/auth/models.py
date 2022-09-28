@@ -13,7 +13,6 @@ from pydal.validators import (IS_NOT_EMPTY,
 def get_time():
     fulltime = datetime.datetime.utcnow() 
     stripped = fulltime.strftime('%Y-%m-%d %H:%M:%S')
-    print('stripped is ', stripped)
     retval = stripped.replace("T"," ")
     return retval.replace("T"," ")
 
