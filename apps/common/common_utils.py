@@ -2,91 +2,75 @@ import os
 
 from websaw.base_form import BaseForm
 from websaw.base_grid import BaseGrid
+from pydal.validators import IS_IN_DB
 
 import datetime
 
 class SQLForm(BaseForm):
 
-    
+    def get_select_options(self, field):
+        
+        table = self.table
+        db = self.db
+        myfield={}
+        
+        q= IS_IN_DB(field._db, field)
+        
+        if isinstance(field.requires, list):
+            rec = None
+            for i, j in enumerate(field.requires):
+                if not isinstance(q, IS_IN_DB):
+                    continue
+                else:
+                    rec = field.requires[i]
+                    break
+        else:
+            rec = field.requires    
+        table = db[rec.ktable]
+        format = ''
+        try:
+            format = db[table]._format[2:-2]
+        except:
+            format = table._fields[1]    
+        
+        options = []
+        for row in db().select(db[table].id, db[table][format]):
+            option = {}
+            if row.id == self.vars[field.name]:
+                option = dict(option=row[format], value=row.id, is_selected = row.id)
+            else:
+                option = dict(option=row[format], value=row.id, is_selected = None)
+            options.append(option)
+                                        
+            myfield = dict(name=field.name,
+                            label=field.label,
+                            type='select',
+                            value=self.vars[field.name],
+                            error=self.errors.get(field.name, ''),
+                            options = options)
+        return myfield
+
     def get_options(self, *args, **kw):
+        
         # options expected by concrete upytl form-component goes here
         # so we have common processing logic
         # but can adjust options to different upytl form-components
+        
         myfields= []
-        if hasattr(self.fields, 'fields'):
-            
-            # so we passed in a table for an add so we need to set up some dummy self.fields
-            # that we will use instead of the actual self.fields as they dont exist
-            
-            all_fields=[]    
-            for var in self.vars:
-                all_fields.append(self.fields[var])
-            
-            for field in all_fields:
-                if not field.type == 'id':
-                    if field.type.startswith('reference'):
-                        try:
-                            table = field.requires.ktable
-                            format = self.db[table]._format[2:-2]
-                            options = []
-                            for row in self.db().select(self.db[table].id, self.db[table][format]):
-                                option = {}
-                                if row.id == self.vars[field.name]:
-                                    option = dict(option=row[format], value=row.id, is_selected = row.id)
-                                else:
-                                    option = dict(option=row[format], value=row.id, is_selected = None)
-                                options.append(option)
-                                            
-                            myfield = dict(name=field.name,
-                                        label=field.label,
-                                        type='select',
-                                        value=self.vars[field.name],
-                                        error=self.errors.get(field.name, ''),
-                                        options = options)
-                        except:
-                            myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
-
-                        finally:
-                            myfields.append(myfield)
-                    
-                    else:    
-                        myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
-                        myfields.append(myfield)
-                    
-                else:
-                    continue    
-        else:
-            for field in self.fields:
-                if not field.type == 'id':
-                    if field.type.startswith('reference'):
-                        try:
-                            table = field.requires.ktable
-                            format = self.db[table]._format[2:-2]
-                            options = []
-                            for row in self.db().select(self.db[table].id, self.db[table][format]):
-                                option = {}
-                                if row.id == self.vars[field.name]:
-                                    option = dict(option=row[format], value=row.id, is_selected = row.id)
-                                else:
-                                    option = dict(option=row[format], value=row.id, is_selected = None)
-                                options.append(option)
-                                            
-                            myfield = dict(name=field.name,
-                                        label=field.label,
-                                        type='select',
-                                        value=self.vars[field.name],
-                                        error=self.errors.get(field.name, ''),
-                                        options = options)
-                        except:
-                            myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
-
-                        finally:
-                            myfields.append(myfield)
-                    
-                    else:    
-                        myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
-                        myfields.append(myfield)
-
+        all_fields=[]    
+        for var in self.vars:
+            all_fields.append(self.fields[var])
+        
+        for field in all_fields:
+            if not field.type == 'id':
+                if field.type.startswith('reference'):
+                    myfield = self.get_select_options(field)
+                else:    
+                    myfield = dict(name=field.name, label=field.label, type=field.type, value=self.vars[field.name], error=self.errors.get(field.name, ''))
+                myfields.append(myfield)
+                
+            else:
+                continue    
         return dict(fields=myfields, flash=self.message)
 
 class SQLGrid(BaseGrid):
@@ -102,19 +86,19 @@ class SQLGrid(BaseGrid):
         if self.viewable:
             r_btns.append('view')
             row_buttons.append(
-                '<a class="button is-link is-light is-small" href="%s"><i class="fas fa-search-location"></i>&nbsp; View</a>' % ( self.ctx.URL('actions', vars=dict(action='view', table=self.tablename,id=row.id)))
+                '<a class="tag is-link is-light is-small" href="%s"><i class="fas fa-search-location"></i>&nbsp; View</a>' % ( self.ctx.URL('actions', vars=dict(action='view', table=self.tablename,id=row.id)))
             )
             
         if self.editable:
             r_btns.append('edit')
             row_buttons.append(
-                '<a class="button is-link is-light is-small" href="%s"><i class="fas fa-cog"></i>&nbsp; Update</a>' % ( self.ctx.URL('actions', vars=dict(action='update', table=self.tablename, id=row.id)))
+                '<a class="tag is-link is-light is-small" href="%s"><i class="fas fa-cog"></i>&nbsp; Update</a>' % ( self.ctx.URL('actions', vars=dict(action='update', table=self.tablename, id=row.id)))
             )
             
         if self.deletable:
             r_btns.append('delete')
             row_buttons.append(
-                '<a class="button is-link is-light is-small" href="%s"><i class="fas fa-trash"></i>&nbsp; Delete</a>' % ( self.ctx.URL('actions', vars=dict(action='delete', table=self.tablename, id=row.id)))
+                '<a class="tag is-link is-light is-small" href="%s"><i class="fas fa-trash"></i>&nbsp; Delete</a>' % ( self.ctx.URL('actions', vars=dict(action='delete', table=self.tablename, id=row.id)))
            )
             
         self.r_buts = ",".join(r_btns)

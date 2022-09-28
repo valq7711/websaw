@@ -27,7 +27,6 @@ class AuthModel(DAL):
         plural = 'Auth Users'
         
         def after_insert(s, args):
-            print('After_insert', s , args)
             db = s._table._db
             user_id = int(args)
             profile = db.user(user_id).profile.select().first()
@@ -54,13 +53,13 @@ class AuthModel(DAL):
     @classmethod
     def on_define_model(cls, db: DAL, extras: dict):
         ## Postprocessing hook.
-        #print('ON DEFINE MODEL', db, extras)
         db.user.username.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db,'user.username')]
         db.user.email.requires = [IS_EMAIL(), IS_NOT_IN_DB(db, 'user.email')]
         db.membership.user_id.requires = IS_IN_DB(db,'user.id', 'user.email')
         db.membership.role_id.requires = IS_IN_DB(db,'role.id', 'role.desc')
         db.profile.user_id.requires = IS_IN_DB(db, 'user.id', 'user.email')
+
     # special hooks
-    def on_action(tbl, hook, *args):
-        """Convenient common hook for all before/after_insert/update/delete actions."""
-        print('on_action', tbl, hook, args)
+#    def on_action(tbl, hook, *args):
+#        """Convenient common hook for all before/after_insert/update/delete actions."""
+#        print('on_action', tbl, hook, args)
