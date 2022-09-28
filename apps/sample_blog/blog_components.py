@@ -48,11 +48,8 @@ class BlogNavBar(Component):
         ctx = DefaultContext.cctx()
         buttons = rprops['buttons']
         for i, j in enumerate(buttons):
-            print('button', buttons[i])
             ref = buttons[i].get('href')
             buttons[i]['href'] = str(ctx.URL(ref))
-            
-        print('buttons', buttons)
         return{**rprops}
 
 class BlogFlash(Component):
