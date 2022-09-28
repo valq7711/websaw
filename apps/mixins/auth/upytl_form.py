@@ -121,7 +121,6 @@ class BaseForm:
             raise RuntimeError('payload is not accepted')
         uploaded = []
         for field, storage in self.files:
-            print('Field', field, 'Upload folder', field.uploadfolder, 'Storage', storage.file, storage.filename)
             value = field.store(
                 storage.file, storage.filename, forced_folder or field.uploadfolder or default_folder
             )

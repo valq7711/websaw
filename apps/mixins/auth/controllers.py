@@ -128,7 +128,7 @@ def profile(ctx: Context):
 
             form.vars.update(user)
         else:
-            print('Form was not accepted')
+            flash.set(ctx, 'From was not accepted', 'warning')
     else: 
 
         # can only be a POST as we dont allow anything else
@@ -145,7 +145,6 @@ def profile(ctx: Context):
 
                 profile = db.user(user['id']).profile.select().first()
                 icon = f'static/images/{profile.image}'
-                print('Icon is ', icon)
                 if profile.image == 'default.jpg':
                     flash.set(ctx, 'Sucsesfully updated your profile information', 'success')
                     form.update(db.profile, record_id = profile.id, del_files = False)
@@ -161,7 +160,6 @@ def profile(ctx: Context):
                 
                 profile = db.user(user['id']).profile.select().first()
                 ipath = ctx['folder']+'/static/images/'+profile.image
-                print('Profiel image before resize', ctx['folder'])
                 resize_image(ipath)
                 
                 # update the session with new information
@@ -175,15 +173,12 @@ def profile(ctx: Context):
                 res = ctx.auth.update_profile(user['id'], form.vars)
                 profile = db.user(user['id']).profile.select().first()
                 icon = f"static/images/{profile.image}"
-                print('Icon in else is  ', icon)
                 
                 flash.set(ctx, 'Congratulations. You have successfully updated your profile. Looking good!!', 'success')
                 redirect(ctx.URL("profile"))
         else:
             profile = db.user(user['id']).profile.select().first()
             icon = f"static/images/{profile.image}"
-                
-            print('INDSIDE POST form not accepted')
             
     return dict(form_options = form.get_options(), icon=icon)
 

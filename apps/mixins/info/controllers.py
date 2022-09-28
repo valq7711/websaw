@@ -24,15 +24,15 @@ app = DefaultApp(ctxd, name=__package__)
 def welcome(ctx):
     msg = (
         'Hey! this is a message from the info-mixin controller'
-        'It uses teh mixin welcome template'
+        'It uses the mixin welcome template'
     )
     return dict(msg=msg)
 
 @app.route('mixin_template_overwritten')
-@app.use(ctxd.welcome_template)
+@app.use(ctxd.index_template)
 def welcome(ctx):
     msg = dict(mixin_message = 'Hey! this is a message from the info-mixin controller'
-                                'It uses teh mixin welcome template'
+                                'It is using the main app index template'
     )    
     return dict(msg=msg)
 
