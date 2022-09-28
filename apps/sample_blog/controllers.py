@@ -53,10 +53,8 @@ def post(ctx):
         if not pid:
             flash.set(ctx, 'You are trying to update an invalid post id', 'warning')
             redirect(ctx.URL('index'))
-        print('PID is ', pid, 'User', user)
         
         post = db(db.post.id == pid).select().first()
-        print('Post is ', post)
         if form.process(ctx, db, db.post, post).accepted:
             if ctx.request.method == 'POST':
                 flash.set(ctx, 'Congratulations. You have updated your Post', 'success')
