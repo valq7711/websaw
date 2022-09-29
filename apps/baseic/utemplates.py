@@ -14,7 +14,7 @@ index = {
         SlotTemplate(Slot='content'):{
             h.Div(Class='box'):{
                 h.Div(Class='title is-4'): 'Welcome [[user]] from the default_template_context',
-                h.Div(Class='title is-5'): 'This is the mixin index Template',
+                h.Div(Class='title is-5'): 'This is the mixin index Template. Select About to see more',
                 h.Div(For='f in msg'):{
                     h.Text():'[[ f ]] : [[msg[f] ]]',
                 }
