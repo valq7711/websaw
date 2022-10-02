@@ -137,3 +137,38 @@ class SQLGrid(BaseGrid):
             data_rows.append(row.as_dict())
         payload['data'] = data_rows
         return payload
+
+
+class SimpleGrid(BaseGrid):
+    
+    def build_row_data(self, row):
+        db = self.db
+        table = self.table
+        for col in self.fields:
+            if db[table][col].type.startswith('reference'):
+                row[col] = db[table][col].represent(row[col], row)
+        return row
+
+    def get_options(self, *args, **kw):
+        
+        # options expected by concrete upytl form-component goes here
+        # so we have common processing logic
+        # but can adjust options to different upytl form-components
+        
+        payload = {}
+        self.tablename = self.table._tablename
+    
+        payload['title'] = self.page_title
+        payload['grid_buttons']= []
+        payload['columns'] = self.columns
+        payload['labels'] = self.labels
+        tablename = self.table._tablename
+        payload['name'] = self.table._tablename
+        
+        rows = self.db(self.db[tablename]).select()
+        data_rows=[]
+        for row in rows:
+            test = self.build_row_data(row)
+            data_rows.append(row.as_dict())
+        payload['data'] = data_rows
+        return payload
