@@ -30,7 +30,7 @@ def post(ctx):
     user = ctx.auth.user
     flash = ctx.flash
     db = ctx.db
-    my_dict = ctx.request.query.decode()
+    my_dict = ctx.request.query
     action = my_dict.get('action', None)
     
     form = SQLForm(db.post)
@@ -85,7 +85,7 @@ def index(ctx: Context):
     flash = ctx.flash   # we are using the flash component form the auth mixin 
     session = ctx.session
     flash_message = session.get('flash_message', {})
-    my_dict = ctx.request.query.decode()
+    my_dict = ctx.request.query
     db = ctx.ask('db')
     
     posts = None

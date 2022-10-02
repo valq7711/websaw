@@ -136,7 +136,7 @@ def db_admin(ctx: Context):
 @app.route('dump_db', method=['GET', 'POST'])
 def dump_db(ctx: Context):
     flash = ctx.flash
-    query = ctx.request.query.decode()
+    query = ctx.request.query
     cdb = query.get('cdb', None)
     if not cdb:
         flash.set(ctx, 'No database to dump. Please select a database to dump', 'warning')
@@ -160,7 +160,7 @@ def dump_db(ctx: Context):
 @app.route('upload_db', method=['GET', 'POST'])
 def upload_db(ctx: Context):
     flash = ctx.flash
-    query = ctx.request.query.decode()
+    query = ctx.request.query
     cdb = query.get('cdb', None)
     if not cdb:
         flash.set(ctx, 'No database to upload. Please select a database to upload', 'warning')
@@ -189,7 +189,7 @@ def table_admin(ctx: Context):
     flash = ctx.flash
     navbar = ctx.navbar
     menu = ctx.menu
-    query = ctx.request.query.decode()
+    query = ctx.request.query
     cdb = session.get('cdb')
     table = query.get('table', None)
     db = ctx.ask(cdb)
@@ -214,7 +214,7 @@ def action(ctx: Context):
     navbar = ctx.navbar
     menu = ctx.menu
     
-    query = ctx.request.query.decode()
+    query = ctx.request.query
     action = query.get("action")
     
     cdb = session.get('cdb')

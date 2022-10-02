@@ -36,7 +36,7 @@ def index(ctx: Context):
     session = ctx.session
     db = ctx.db
     
-    query = ctx.request.query.decode()
+    query = ctx.request.query
     action = query.get("action")
     if not action:
         redirect(ctx.URL('index'))

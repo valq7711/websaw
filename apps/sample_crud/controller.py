@@ -12,10 +12,6 @@ from .todo_db import db
 from .. common.common_utils import SQLForm
 from .. common.common_utils import SQLGrid
 
-#class DBRegistry(Fixture):
-#    def __init__(self):
-#        self.dbs_keys = set()
-
 # extend default context with our fixture
 class Context(DefaultContext):
     db=db
@@ -45,7 +41,7 @@ def index(ctx: Context):
 def action(ctx: Context):
     session = ctx.session
     
-    query = ctx.request.query.decode()
+    query = ctx.request.query
     action = query.get("action")
     db = query.get('cdb')
     table = query.get('table')
