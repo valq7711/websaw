@@ -23,6 +23,7 @@ class BaseGrid:
     - links: list of addtional links to other tables
     - form_name: the optional name for this grid
     - serverside: set to False for client side processing
+    - is_crud: set to False to disable CRUD options
     """
 
     def __init__(self, 
@@ -33,12 +34,12 @@ class BaseGrid:
         
         allowed_args = ('create', 'editable', 'deletable', 'viewable',
                         'upload', 'download', 'b_button', 'links', 'page_title',
-                        'show_id', 'hide', 'order','grid_type', 'serverside')
+                        'show_id', 'hide', 'order','grid_type', 'serverside', 'is_crud')
         
         default_values = dict(create=True, editable=True, deletable=True, viewable=True, links=None,
                               upload=False, download=False, b_button = None,  page_title=None,
                               show_id=True, hide=[], grid_type='HTMLGrid', order=['0', 'asc'],
-                              serverside=False)
+                              serverside=False, is_crud=True)
                  
         self.__dict__.update(default_values)
         if set(kwargs.keys()).issubset(allowed_args):
@@ -159,8 +160,9 @@ class BaseGrid:
             self.columns.append({'data': f})
             self.labels.append(db[t][f].label)
             
-        self.labels.append('Actions')
-        self.columns.append({'data': 'btns'})
+        if self.is_crud:
+            self.labels.append('Actions')
+            self.columns.append({'data': 'btns'})
         headers = self.labels
         return headers
     
