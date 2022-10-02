@@ -1,5 +1,5 @@
-from websaw import DefaultApp, DefaultContext, XAuth, AuthErr, redirect
-from websaw.core import Fixture
+from websaw import DefaultApp, DefaultContext, XAuth, redirect
+
 import ombott
 
 
@@ -56,8 +56,8 @@ class Context(DefaultContext):
     auth = auth
 
 
-ctx_ = Context()
-app = DefaultApp(ctx_, name=__package__)
+ctxd = Context()
+app = DefaultApp(ctxd, name=__package__)
 
 
 @app.route('login')
@@ -77,7 +77,7 @@ def logout(ctx: Context):
 
 
 @app.route('private')
-@app.use(ctx_.auth_guard)
+@app.use(ctxd.auth_guard)
 def private(ctx: Context):
     return dict(user_in_session=ctx.auth_guard.user)
 

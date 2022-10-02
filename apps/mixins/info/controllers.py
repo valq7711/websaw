@@ -5,7 +5,7 @@ from . import utemplates as ut
 
 class Context(DefaultContext):
     env = {
-        'template_context' : dict(user = 'John Andrew'),
+        'default_template_context' : dict(user = 'Test User'),
     }
     
     # To make template replaceable/referenceable we should assign a fixture key (e.g. welcome_template)
@@ -20,11 +20,11 @@ app = DefaultApp(ctxd, name=__package__)
 
 
 @app.route('welcome')
-@app.use(ctxd.welcome_template)
+@app.use(ut.welcome)
 def welcome(ctx):
     msg = (
         'Hey! this is a message from the info-mixin controller'
-        'It uses the mixin welcome template'
+        'It uses the mixin welcome template explicitly'
     )
     return dict(msg=msg)
 

@@ -1,6 +1,4 @@
-from upytl import SlotTemplate, html as h 
-
-from upytl_standard import HTMLPage, StandardNavBar 
+from upytl import html as h 
 
 # flake8: noqa E226
 
