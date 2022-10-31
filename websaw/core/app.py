@@ -34,12 +34,17 @@ class Fixtured:
 class SPAPath(dict):
     path: str
     is_main_path: bool
+    meta: dict
+    name: str
 
-    def __init__(self, path):
+    def __init__(self, path, meta, name):
         obj = {
             'path': path,
-            'is_main_path': False,
         }
+        for k, v in [('meta', meta), ('name', name)]:
+            if v is not None:
+                obj[k] = v
+
         super().__init__(obj)
 
     __setattr__ = dict.__setitem__
@@ -203,7 +208,7 @@ class BaseApp:
         if spa_component:
             spa_component_routes: dict = app_data.spa_routes.setdefault(spa.name, {})
             spa_routes: list = spa_component_routes.setdefault(spa_component, [])
-            spa_path = SPAPath(route_rule)
+            spa_path = SPAPath(route_rule, route_kw.pop('meta', None), route_kw.get('name', None))
             if spa_path.path == spa.main_path:  # usually 'index'
                 spa_path.is_main_path = True
                 route_spa_main_args = [f'pages-api/{spa.name}', *route_rest_args]
@@ -269,7 +274,7 @@ class BaseApp:
                 f.write(f'SPA_ROUTES={spa_routes_json}')
             spa_main_handler = self.app_data.named_routes[f'spa_main[{spa_name}]'].methods['GET'].handler
             for spa_paths in spa_component_routes.values():
-                spa_paths = (p for p in spa_paths if not p.is_main_path)
+                spa_paths = (p for p in spa_paths if not p.get('is_main_path'))
                 for p in spa_paths:
                     self._mount_route(spa_main_handler, (p.path, 'GET', None), {})
 
