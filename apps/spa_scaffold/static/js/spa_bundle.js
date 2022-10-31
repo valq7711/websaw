@@ -1,6 +1,6 @@
 (function(){
 "use strict";
-var ՐՏ_1, ՐՏ_2, ՐՏ_3;
+var ՐՏ_1, ՐՏ_2, ՐՏ_3, ՐՏ_4;
 function ՐՏ_extends(child, parent) {
     child.prototype = Object.create(parent.prototype);
     child.prototype.__base__ = parent;
@@ -69,6 +69,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
 ՐՏ_modules.ՐՏ_def("asset");
 ՐՏ_modules.ՐՏ_def("spa_tools");
 ՐՏ_modules.ՐՏ_def("bundled_pages.index");
+ՐՏ_modules.ՐՏ_def("bundled_pages.search_box");
 ՐՏ_modules.ՐՏ_def("bundled_pages");
 ՐՏ_modules.ՐՏ_def("bundled_components.layout");
 ՐՏ_modules.ՐՏ_def("bundled_components.search_box");
@@ -245,13 +246,59 @@ var ՐՏ_modules = ՐՏ_def_modules();
     return ՐՏ_mod["exports"];
 };
 
+ՐՏ_modules["ՐՏ:bundled_pages.search_box"].body = function(){
+    var __name__ = "bundled_pages.search_box";
+
+    var templ, vc;
+    templ = "\n<layout>\n    <p>This is search-box page</p>\n    <p>It was created using pyjsaw, src: vuepy/bundled_pages/search_box.vuepy</p>\n    <p>It is bundled into spa_bundle.pyj which is compiled to static/js/spa_bundle.js</p>\n    <search_box  :current_search = 'current_search' :is_loading = 'search_loading' @input_search = 'do_search'></search_box>\n    <div>\n        {{current_search}}\n    </div>\n</layout>\n";
+    var spa_tools = ՐՏ_modules["spa_tools"];
+    vc = spa_tools.v_collector();
+    
+    var Page = (ՐՏ_2 = class Page extends spa_tools.RSVue {
+        constructor () {
+            super();
+            var self = this;
+            self.name = __name__;
+            self.template = templ;
+        }
+        data () {
+            var self = this;
+            return {
+                current_search: "Some",
+                search_loading: false
+            };
+        }
+        do_search (txt) {
+            var self = this;
+            self.search_loading = true;
+            setTimeout(function() {
+                self.current_search = txt;
+                self.search_loading = false;
+            }, 1e3);
+        }
+    }, ՐՏ_2 = vc.component()(ՐՏ_2), ՐՏ_2);
+    function make() {
+        return new Page();
+    }
+    var ՐՏ_mod = ՐՏ_modules["ՐՏ:bundled_pages.search_box"];
+    ՐՏ_mod.export("templ", function(){return templ;}, function(ՐՏ_v){if (typeof templ !== "undefined") {templ = ՐՏ_v;};});
+    ՐՏ_mod.export("vc", function(){return vc;}, function(ՐՏ_v){if (typeof vc !== "undefined") {vc = ՐՏ_v;};});
+    ՐՏ_mod.export("Page", function(){return Page;}, function(ՐՏ_v){if (typeof Page !== "undefined") {Page = ՐՏ_v;};});
+    ՐՏ_mod.export("make", function(){return make;}, function(ՐՏ_v){if (typeof make !== "undefined") {make = ՐՏ_v;};});
+    ՐՏ_mod.export("spa_tools", function(){return spa_tools;}, function(ՐՏ_v){if (typeof spa_tools !== "undefined") {spa_tools = ՐՏ_v;};});
+    return ՐՏ_mod["exports"];
+};
+
 ՐՏ_modules["ՐՏ:bundled_pages"].body = function(){
     var __name__ = "bundled_pages";
 
     ՐՏ_modules["ՐՏ:bundled_pages"].export("index", function(){return ՐՏ_modules["bundled_pages.index"];}, function(){throw new Error("use Object.defineProperty!");});
+    ՐՏ_modules["ՐՏ:bundled_pages"].export("search_box", function(){return ՐՏ_modules["bundled_pages.search_box"];}, function(){throw new Error("use Object.defineProperty!");});
     var index = ՐՏ_modules["bundled_pages.index"];
+    var search_box = ՐՏ_modules["bundled_pages.search_box"];
     var ՐՏ_mod = ՐՏ_modules["ՐՏ:bundled_pages"];
     ՐՏ_mod.export("index", function(){return index;}, function(ՐՏ_v){if (typeof index !== "undefined") {index = ՐՏ_v;};});
+    ՐՏ_mod.export("search_box", function(){return search_box;}, function(ՐՏ_v){if (typeof search_box !== "undefined") {search_box = ՐՏ_v;};});
     return ՐՏ_mod["exports"];
 };
 
@@ -259,18 +306,18 @@ var ՐՏ_modules = ՐՏ_def_modules();
     var __name__ = "bundled_components.layout";
 
     var templ, vc;
-    templ = "\n<div>\n    <h2>This is layout (vuepy/bundled_components/layout.vuepy)</h2>\n    <nav>\n        <router-link  to = \"/page-one\">One</router-link>\n        <router-link  to = '/page-two'>Two</router-link>\n        <router-link  to = '/page-three'>Three</router-link>\n        <router-link  to = '/search'>Search</router-link>\n        <router-link  to = '/post-demo'>Post demo</router-link>\n    </nav>\n    <h1>Current URI: {{$route.fullPath}}</h1>\n    <p>Page Content:</p>\n    <div  style = 'padding-left: 50px; background-color: #eee;'>\n        <slot></slot>\n    </div>\n    <div>\n        <router-link  to = '/index'>index</router-link>\n    </div>\n</div>\n";
+    templ = "\n<div>\n    <h2>This is layout (vuepy/bundled_components/layout.vuepy)</h2>\n    <nav>\n        <router-link  to = \"/page-one\">One</router-link>\n        <router-link  to = '/page-two'>Two</router-link>\n        <router-link  to = '/page-three'>Three</router-link>\n        <router-link  to = '/search'>Search</router-link>\n        <router-link  to = '/search-box'>Search-bundled</router-link>\n        <router-link  to = '/post-demo'>Post demo</router-link>\n    </nav>\n    <h1>Current URI: {{$route.fullPath}}</h1>\n    <p>Page Content:</p>\n    <div  style = 'padding-left: 50px; background-color: #eee;'>\n        <slot></slot>\n    </div>\n    <div>\n        <router-link  to = '/index'>index</router-link>\n    </div>\n</div>\n";
     var spa_tools = ՐՏ_modules["spa_tools"];
     vc = spa_tools.v_collector();
     
-    var Component = (ՐՏ_2 = class Component extends spa_tools.RSVue {
+    var Component = (ՐՏ_3 = class Component extends spa_tools.RSVue {
         constructor () {
             super();
             var self = this;
             self.name = __name__;
             self.template = templ;
         }
-    }, ՐՏ_2 = vc.component()(ՐՏ_2), ՐՏ_2);
+    }, ՐՏ_3 = vc.component()(ՐՏ_3), ՐՏ_3);
     function make() {
         return new Component();
     }
@@ -291,7 +338,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
     var spa_tools = ՐՏ_modules["spa_tools"];
     vc = spa_tools.v_collector();
     
-    var Component = (ՐՏ_3 = class Component extends spa_tools.RSVue {
+    var Component = (ՐՏ_4 = class Component extends spa_tools.RSVue {
         constructor () {
             super();
             var self = this;
@@ -314,21 +361,21 @@ var ՐՏ_modules = ՐՏ_def_modules();
             var self = this;
             self.button_text = n ? "Loading..." : "Search";
         }
-    }, ՐՏ_3 = vc.component()((function(){
-        Object.defineProperties(ՐՏ_3.prototype, {
+    }, ՐՏ_4 = vc.component()((function(){
+        Object.defineProperties(ՐՏ_4.prototype, {
             watch_current_search: {
                 enumerable: false, 
                 writable: true, 
-                value: vc.watch("current_search")(ՐՏ_3.prototype.watch_current_search)
+                value: vc.watch("current_search")(ՐՏ_4.prototype.watch_current_search)
             },
             watch_is_loading: {
                 enumerable: false, 
                 writable: true, 
-                value: vc.watch("is_loading")(ՐՏ_3.prototype.watch_is_loading)
+                value: vc.watch("is_loading")(ՐՏ_4.prototype.watch_is_loading)
             }
         });
-        return ՐՏ_3;
-    })()), ՐՏ_3);
+        return ՐՏ_4;
+    })()), ՐՏ_4);
     function make() {
         return new Component();
     }
@@ -364,7 +411,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
         var spa_pages = ՐՏ_modules["bundled_pages"];
         var spa_components = ՐՏ_modules["bundled_components"];
         function register_components(Vue) {
-            var ՐՏitr2, ՐՏidx2, ՐՏ_4;
+            var ՐՏitr2, ՐՏidx2, ՐՏ_5;
             var module_name, c, cid;
             if (!spa_components) {
                 return;
@@ -373,7 +420,7 @@ var ՐՏ_modules = ՐՏ_def_modules();
             for (ՐՏidx2 = 0; ՐՏidx2 < ՐՏitr2.length; ՐՏidx2++) {
                 module_name = ՐՏitr2[ՐՏidx2];
                 c = spa_components[module_name].make();
-                cid = (ՐՏ_4 = c.name.split("."))[ՐՏ_4.length-1];
+                cid = (ՐՏ_5 = c.name.split("."))[ՐՏ_5.length-1];
                 Vue.component(cid, c);
             }
         }

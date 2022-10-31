@@ -9,6 +9,7 @@ v-def templ:
             router-link(to='/page-two'): 'Two'
             router-link(to='/page-three'): 'Three'
             router-link(to='/search'): 'Search'
+            router-link(to='/search-box'): 'Search-bundled'
             router-link(to='/post-demo'): 'Post demo'
         h1: 'Current URI: {{$route.fullPath}}'
         p: 'Page Content:'
