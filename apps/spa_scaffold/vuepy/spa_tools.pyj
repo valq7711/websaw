@@ -54,10 +54,10 @@ class PageUtil:
             path, query = args
         elif len_args == 3:
             path, query, headers = args
-        self.http('get', [path, query], headers)
+        return self.http('get', [path, query], headers)
 
     def post(self, *args):
-        self.http('post', *args)
+        return self.http('post', *args)
 
     @asyncer
     def redirect(self, path, query):

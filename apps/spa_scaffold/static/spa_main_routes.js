@@ -7,32 +7,37 @@ SPA_ROUTES={
     ],
     "url:spa/pages/page_one.js": [
         {
-            "path": "page-one",
-            "is_main_path": false
+            "path": "page-one"
         }
     ],
     "url:spa/pages/page_two.html": [
         {
-            "path": "page-two",
-            "is_main_path": false
+            "path": "page-two"
         }
     ],
     "url:spa/pages/page_three.js": [
         {
-            "path": "page-three",
-            "is_main_path": false
+            "path": "page-three"
         }
     ],
     "url:spa/pages/search.html": [
         {
-            "path": "search",
-            "is_main_path": false
+            "path": "search"
+        }
+    ],
+    "component:search_box": [
+        {
+            "path": "search-box"
         }
     ],
     "url:spa/pages/post_demo.html": [
         {
-            "path": "post-demo",
-            "is_main_path": false
+            "path": "post-demo"
+        }
+    ],
+    "component:foo": [
+        {
+            "path": "foo"
         }
     ]
 }

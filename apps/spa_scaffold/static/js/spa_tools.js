@@ -694,12 +694,12 @@ var ՐՏ_modules = ՐՏ_def_modules();
             } else if (len_args === 3) {
                 [path, query, headers] = args;
             }
-            self.http("get", [ path, query ], headers);
+            return self.http("get", [ path, query ], headers);
         }
         post () {
             var self = this;
             var args = [].slice.call(arguments, 0);
-            self.http("post", ...args);
+            return self.http("post", ...args);
         }
         *redirect (path, query) {
             var self = this;
