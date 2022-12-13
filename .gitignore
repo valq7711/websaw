@@ -38,7 +38,7 @@ websaw/utils/
 
 __*
 !__init__.py
-!__init__.pyj
+!__pyjsaw__.py
 !__main__.py
 
 apps/*-dev

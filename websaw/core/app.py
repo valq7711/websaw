@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import List, Dict, Callable, Optional, Union, Set, Tuple
 import dataclasses
 from dataclasses import dataclass
+from pathlib import Path
 
 from . import globs
 from .context import BaseContext
@@ -12,6 +13,13 @@ from .exceptions import FixtureProcessError
 from .reloader import Reloader
 from .static_registry import StaticRegistry
 from .fixture import SPAFixture, Fixture
+import importlib
+
+
+try:
+    import pyjsaw
+except ImportError:
+    pass
 
 
 def _dummy_exception_handler(ctx: BaseContext, exc: Exception):
@@ -183,6 +191,8 @@ class BaseApp:
                 else:
                     self._mount_route(h, route_args, route_kw)
 
+        self._compile_pyjs_folder()
+
         # make static/spa_routes.js
         # 'redirect' all spa-routes to 'index'
         self._mount_spa_routes()
@@ -262,6 +272,45 @@ class BaseApp:
         if mixin_data:
             prefix = f'mxn/{mixin_data.app_name}'
         return spa_component.make_component_reference(ctx, prefix)
+
+    def _compile_pyjs_folder(self):
+        if pyjsaw is None:
+            return
+        pyjs_dir = Path(self.app_data.folder) / 'pyjs'
+        if not pyjs_dir.is_dir():
+            return
+        out_dir = Path(self.app_data.static_folder) / 'pyjs'
+        if not out_dir.exists():
+            out_dir.mkdir()
+
+        pyjsaw_py = pyjs_dir / '__pyjsaw__.py'
+        if pyjsaw_py.exists():
+            pyjsaw_py = pyjsaw_py.read_text()
+            pyjsaw_py = compile(pyjsaw_py, '__payjsaw__.py', 'exec')
+            out = {}
+            exec(pyjsaw_py, {"__builtins__": {}}, out)
+            files = out['outmap']
+            if isinstance(files, list):
+                files = {f'{f}.py': f'{f}.js' for f in files}
+            else:
+                assert isinstance(files, dict)
+                files = {f'{py}.py': f'{js}.js' for py, js in files.items()}
+        else:
+            files = {
+                f.name: f'{f.stem}.js'
+                for f in pyjs_dir.iterdir() if f.is_file() and f.suffix == '.py' and f.stem != '__pyjsaw__'
+            }
+
+        for py, js in files.items():
+            py = pyjs_dir / py
+            try:
+                js_code = pyjsaw.compile(py)
+            except Exception as exc:
+                print(f'error in {py}:', *exc.args)
+                continue
+
+            js_file = out_dir / js
+            js_file.write_text(js_code, encoding='utf8')
 
     def _mount_spa_routes(self):
         spa_routes_map = self.app_data.spa_routes

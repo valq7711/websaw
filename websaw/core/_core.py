@@ -16,12 +16,15 @@ def import_apps(pyjsaw_installed):
 
     Reloader.import_apps()
     if pyjsaw_installed is not None:
+        # TODO  pyjsaw -> pyjsaw_ide
         if 'pyjsaw' in Reloader.modules:
             # we have apps/pyjsaw
             # forget pyjsaw_installed
             Reloader.forget_package('pyjsaw')
         else:
-            pyjsaw_installed.websaw_main()
+            pass
+            # TODO
+            #pyjsaw_installed.websaw_main()
 
     core_event_bus.emit(CoreEvents.APPS_LOADED)
 
