@@ -11,21 +11,9 @@ __all__ = (
 )
 
 
-def import_apps(pyjsaw_installed):
+def import_apps():
     core_event_bus.emit(CoreEvents.BEFORE_APPS_LOAD)
-
     Reloader.import_apps()
-    if pyjsaw_installed is not None:
-        # TODO  pyjsaw -> pyjsaw_ide
-        if 'pyjsaw' in Reloader.modules:
-            # we have apps/pyjsaw
-            # forget pyjsaw_installed
-            Reloader.forget_package('pyjsaw')
-        else:
-            pass
-            # TODO
-            #pyjsaw_installed.websaw_main()
-
     core_event_bus.emit(CoreEvents.APPS_LOADED)
 
 
@@ -38,9 +26,5 @@ def reload_apps(*app_names):
 def wsgi(**kwargs):
     """Initializes everything, loads apps, returns the wsgi app"""
     install_args(kwargs)
-    try:
-        import pyjsaw
-    except ImportError:
-        pyjsaw = None
-    import_apps(pyjsaw)
+    import_apps()
     return globs.app

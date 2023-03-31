@@ -1,4 +1,4 @@
-from typing import List
+from typing import Set
 
 from ..core.fixture import Fixture
 
@@ -16,6 +16,6 @@ class DBRegistry(Fixture):
         self._db_keys.add(fixture_key)
 
     @property
-    def db_keys(self) -> List[str]:
+    def db_keys(self) -> Set[str]:
         """Return a set of db-fixtures keys registered in this registry."""
-        return {*self._db_keys}
+        return self._db_keys.copy()

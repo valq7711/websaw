@@ -12,13 +12,13 @@ from .context import BaseContext
 from .exceptions import FixtureProcessError
 from .reloader import Reloader
 from .static_registry import StaticRegistry
-from .fixture import SPAFixture, Fixture
-import importlib
+from .fixture import SPAFixture
 
 
 try:
     import pyjsaw
 except ImportError:
+    pyjsaw = None
     pass
 
 
@@ -306,8 +306,7 @@ class BaseApp:
             try:
                 js_code = pyjsaw.compile(py)
             except Exception as exc:
-                print(f'error in {py}:', *exc.args)
-                continue
+                raise exc
 
             js_file = out_dir / js
             js_file.write_text(js_code, encoding='utf8')
@@ -316,11 +315,13 @@ class BaseApp:
         spa_routes_map = self.app_data.spa_routes
         if not spa_routes_map:
             return
-
+        static_folder = Path(self.app_data.static_folder)
         for spa_name, spa_component_routes in spa_routes_map.items():
             spa_routes_json = json.dumps(spa_component_routes, indent=4)
-            with open(os.path.join(self.app_data.static_folder, f'spa_{spa_name}_routes.js'), 'w') as f:
-                f.write(f'SPA_ROUTES={spa_routes_json}')
+            (
+                (static_folder / f'spa_{spa_name}_routes.js')
+                .write_text(f'SPA_ROUTES={spa_routes_json}', encoding='utf8')
+            )
             spa_main_handler = self.app_data.named_routes[f'spa_main[{spa_name}]'].methods['GET'].handler
             for spa_paths in spa_component_routes.values():
                 spa_paths = (p for p in spa_paths if not p.get('is_main_path'))

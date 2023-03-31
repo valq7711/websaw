@@ -47,9 +47,6 @@ __ssl__ = __import__("ssl")
 _ssl = getattr(__ssl__, "_ssl") or getattr(__ssl__, "_ssl2")
 
 
-
-
-
 def keyboardInterruptHandler(signal, frame):
     """Catch interrupts like Ctrl-C"""
     click.echo(
@@ -235,7 +232,8 @@ def run(**kwargs):
     click.secho(ART, fg="cyan")
     click.echo("Websaw: %s on Python %s\n\n" % (__version__, sys.version))
 
-    # If we know where the password is stored, read it, otherwise ask for one
+    # TODO need to implement some admin-app (pyjsaw is py->js compiler now)
+    '''
     try:
         import pyjsaw
         click.echo(f"Found pyjsaw {pyjsaw.__version__} installed!")
@@ -257,9 +255,10 @@ def run(**kwargs):
                 "Pyjsaw is at: http://%s:%s/pyjsaw"
                 % (kwargs["host"], kwargs["port"])
             )
+    '''
 
     # Start
-    import_apps(pyjsaw)
+    import_apps()
     start_server(kwargs)
 
 

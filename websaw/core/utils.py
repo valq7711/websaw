@@ -1,8 +1,9 @@
-import urllib
+import urllib.parse
 import sys
 import os
 import logging
-import importlib
+import importlib.util
+import importlib.machinery
 import threading
 import functools
 import time
@@ -11,6 +12,7 @@ import datetime
 import enum
 import types
 import json
+from pathlib import Path
 from typing import TypeVar, Type, Union, Tuple, Iterable, Any, Dict, List
 
 
@@ -152,13 +154,11 @@ def safely(func, exceptions=(Exception,), log=False, default=None):
         return default() if callable(default) else default
 
 
-def module2filename(module_name, base_path=None):
-    fp = sys.modules[module_name].__file__
+def module2filename(module_name, base_path: Path = None):
+    fp = Path(sys.modules[module_name].__file__)
     if base_path:
-        base_path = f'{base_path.rstrip(os.sep)}{os.sep}'
-        if fp.startswith(base_path):
-            fp = fp[len(base_path):]
-    return fp
+        fp = fp.relative_to(base_path)
+    return str(fp)
 
 
 ########################################################################################

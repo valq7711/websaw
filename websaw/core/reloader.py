@@ -1,22 +1,26 @@
 import sys
 import os
 import click
-import importlib
+import importlib.machinery
 import traceback
 from typing import Dict
+import logging
+from pathlib import Path
 
 from .globs import app as om_app
-from .loggers import error_logger, get_error_snapshot
 from .utils import module2filename
 
 from .core_events import core_event_bus, CoreEvents
+
+
+_logger = logging.getLogger('websaw')
 
 
 def _clear_modules(pckg_name):
     # all files/submodules
     names = [
         name for name in sys.modules
-        if (name + ".").startswith(pckg_name + ".")
+        if (f'{name}.').startswith(f'{pckg_name}.')
     ]
     for name in names:
         del sys.modules[name]
@@ -32,31 +36,22 @@ class Reloader:
     @staticmethod
     def read_password_hash():
         """Read admin password hash from WEBSAW_PASSWORD_FILE if exists one."""
-        pwf = os.environ["WEBSAW_PASSWORD_FILE"]
-        if os.path.exists(pwf):
-            with open(pwf, 'r') as f:
-                hash = f.read().strip()
+        pwf = Path(os.environ["WEBSAW_PASSWORD_FILE"])
+        if pwf.exists():
+            hash = pwf.read_text().strip()
             return hash
 
     @staticmethod
     def get_apps_folder():
-        return os.environ["WEBSAW_APPS_FOLDER"]
-
-    @classmethod
-    def get_apps_folder_name(cls):
-        return os.path.split(cls.get_apps_folder())[-1]
+        return Path(os.environ["WEBSAW_APPS_FOLDER"])
 
     @classmethod
     def package_folder(cls, package_name):
-        pdir = os.path.dirname(sys.modules[package_name].__file__)
+        pdir = Path(sys.modules[package_name].__file__).parent
         return pdir
 
     @classmethod
-    def package_folder_path(cls, package_name, *parts):
-        return os.path.join(cls.package_folder(package_name), *parts)
-
-    @classmethod
-    def register_app(cls, app_name, app):
+    def register_app(cls, app_name: str, app):
         cls.registered_apps[app_name] = app
 
     @classmethod
@@ -64,11 +59,23 @@ class Reloader:
         core_event_bus.on(CoreEvents.RELOAD_APPS, cls.reimport_apps)
 
     @classmethod
-    def reimport_apps(cls, *app_names):
-        reload_all = not app_names or set(app_names) - set(cls.registered_apps)
-        apps_folder_name = cls.get_apps_folder_name()
+    def is_package(self, pth: Path):
+        return pth.is_dir() and not pth.name.startswith(('__', '.')) and (pth / '__init__.py').exists()
+
+    @classmethod
+    def get_packs_names(cls, folder: Path):
+        return [
+            p.name for p in folder.iterdir()
+            if cls.is_package(p)
+        ]
+
+    @classmethod
+    def reimport_apps(cls, *app_names: str):
+        reload_all = not app_names or {app_names} - {cls.registered_apps}
+        apps_folder = cls.get_apps_folder()
+        apps_folder_name = apps_folder.name
         if reload_all:
-            pack_names = os.listdir(cls.get_apps_folder())
+            pack_names = cls.get_packs_names(apps_folder)
         else:
             pack_names = app_names
         for pack_name in pack_names:
@@ -80,33 +87,34 @@ class Reloader:
             cls.import_apps_package(pack_name)
 
     @classmethod
+    def load_package(cls, folder: Path, name_id: str = None):
+        if name_id is None:
+            name_id = folder.name
+        loader = importlib.machinery.SourceFileLoader(name_id, str(folder / "__init__.py"))
+        return loader.load_module()
+
+    @classmethod
     def import_apps(cls):
         """Import or reimport modules"""
-        folder = cls.get_apps_folder()
+        apps_folder = cls.get_apps_folder()
+        _logger.info(
+            f"\n\n\n\n************** Start loading applications from {apps_folder} ******************\n"
+        )
         # if first time reload dummy top module
         if not cls.modules:
-            path = os.path.join(folder, "__init__.py")
-            loader = importlib.machinery.SourceFileLoader("apps", path)
-            loader.load_module()
+            cls.load_package(apps_folder)
         # Then load all the apps as submodules
-        for pack_name in os.listdir(folder):
+        for pack_name in cls.get_packs_names(apps_folder):
             cls.import_apps_package(pack_name)
 
     @classmethod
     def import_apps_package(cls, pack_name: str):
-        folder = cls.get_apps_folder()
-        path = os.path.join(folder, pack_name)
-        init = os.path.join(path, "__init__.py")
-
-        if not (
-            not pack_name.startswith("__")
-            and os.path.isdir(path)
-            and os.path.exists(init)
-        ):
+        apps_folder = cls.get_apps_folder()
+        pack_folder = apps_folder / pack_name
+        if not cls.is_package(pack_folder):
             return
 
-        apps_folder_name = cls.get_apps_folder_name()
-        full_pack_name = f"{apps_folder_name}.{pack_name}"
+        full_pack_name = f"{apps_folder.name}.{pack_name}"
         is_loaded = full_pack_name in sys.modules
         try:
             module = cls.modules.get(pack_name)
@@ -124,17 +132,17 @@ class Reloader:
                     del cls.modules[pack_name]
 
             if not is_loaded:
-                module = importlib.machinery.SourceFileLoader(full_pack_name, init).load_module()
+                _logger.info(f'(re)loading module: {pack_name}')
+                module = cls.load_package(pack_folder, name_id=full_pack_name)
                 if hasattr(module, 'websaw_main'):
                     module.websaw_main()
+                _logger.info(f'(re)loaded successfully: {pack_name}')
                 click.secho(f"\x1b[A[X] loaded {pack_name}       ", fg="green")
             cls.modules[pack_name] = module
             cls.errors[pack_name] = None
         except Exception as err:
             cls.errors[pack_name] = traceback.format_exc()
-            error_logger.log(
-                pack_name, get_error_snapshot()
-            )
+            _logger.error(f'failed to load {pack_name}:', exc_info=True)
             click.secho(
                 f"\x1b[A[FAILED] loading {pack_name} ({err})",
                 fg="red",
