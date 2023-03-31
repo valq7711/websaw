@@ -1,0 +1,56 @@
+[project]
+name = "websaw"
+description = "websaw - a web framework for rapid development with pleasure"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = ["python", "webapplication", "vue", "javascript", "js"]
+authors = [
+  { name="Valery Kucherov", email="valq7711@gmail.com" },
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "ombott>=1.0.0",
+    "click",
+    "threadsafevariable",
+    "pydal",
+    "pyjwt",
+    "voodoodal>=1.1.0",
+    "upytl>=0.0.7",
+    "pyjsaw>=1.0.0"
+]
+
+dynamic = ["version"]
+
+[project.optional-dependencies]
+full = [
+    "watchgod",
+    "upytl-standard>=0.0.3",
+]
+
+[project.urls]
+homepage = "https://github.com/valq7711/websaw"
+repository = "https://github.com/valq7711/websaw"
+
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["websaw"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "websaw.__version__"}
