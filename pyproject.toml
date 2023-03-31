@@ -29,7 +29,7 @@ dependencies = [
     "pyjwt",
     "voodoodal>=1.1.0",
     "upytl>=0.0.7",
-    "pyjsaw>=1.0.0"
+    "pyjsaw>=1.1.0"
 ]
 
 dynamic = ["version"]
@@ -44,12 +44,16 @@ full = [
 homepage = "https://github.com/valq7711/websaw"
 repository = "https://github.com/valq7711/websaw"
 
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 zip-safe = false
 
 [tool.setuptools.packages.find]
-where = ["websaw"]
+include = ['websaw*']
+namespaces = false
 
 
 [tool.setuptools.dynamic]
