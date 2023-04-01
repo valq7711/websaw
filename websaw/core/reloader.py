@@ -71,7 +71,7 @@ class Reloader:
 
     @classmethod
     def reimport_apps(cls, *app_names: str):
-        reload_all = not app_names or {app_names} - {cls.registered_apps}
+        reload_all = not app_names or {*app_names} - {*cls.registered_apps}
         apps_folder = cls.get_apps_folder()
         apps_folder_name = apps_folder.name
         if reload_all:
