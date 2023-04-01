@@ -54,3 +54,4 @@ apps/mixins/*/databases/*
 apps/*/static/images/*
 !apps/*/static/images/default.jpg
 apps/.*
+apps/websaw.log
