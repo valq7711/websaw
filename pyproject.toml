@@ -37,7 +37,8 @@ dynamic = ["version"]
 [project.optional-dependencies]
 full = [
     "watchgod",
-    "upytl-standard>=0.0.3",
+    "pillow",
+    "upytl-standard>=0.0.6",
 ]
 
 [project.urls]
