@@ -2,8 +2,12 @@ import copy
 from pydal import DAL as _DAL
 from threadsafevariable import ThreadSafeVariable
 
+from ..core import BaseContext
 from ..core.core_events import core_event_bus, CoreEvents
 from ..core.fixture import Fixture
+from .dbregistry import DBRegistry
+
+
 
 
 # this global object will be used to store their state to restore it for every http request
@@ -19,12 +23,28 @@ class DAL(_DAL, Fixture):
 
     reconnect_on_request = True
 
-    def take_on(self, ctx):
+    _websaw_db_registry_key = 'db_registry'
+
+    def set_db_registry_key(self, key: str):
+        self._websaw_db_registry_key = key
+
+    @property
+    def websaw_db_registry_key(self) -> str:
+        return self._websaw_db_registry_key
+
+    def take_on(self, ctx: BaseContext):
         if self.reconnect_on_request:
             self._adapter.reconnect()
         ThreadSafeVariable.restore(ICECUBE)
 
-    def take_off(self, ctx):
+    def app_mounted(self, ctx: BaseContext):
+        """Perform self-registration if `self._websaw_db_registry_key` in ctx."""
+        db_registry: DBRegistry = ctx.ask(self._websaw_db_registry_key)
+        if db_registry is not None:
+            self_key = ctx.get_or_make_fixture_key(self)
+            db_registry.register(self_key)
+
+    def take_off(self, ctx: BaseContext):
         if ctx.exception:
             self.rollback()
         else:

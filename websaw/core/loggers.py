@@ -79,9 +79,11 @@ def get_error_snapshot(depth=5):
 
 
 class SimpleErrorLogger:
+    _logger = logging.getLogger('websaw_errors')
+
     def log(self, app_name, snapshot):
         """logs the error"""
-        logging.error("%s error:\n%s" % (app_name, snapshot["traceback"]))
+        self._logger.error(f"{app_name} error:\n{snapshot['traceback']}")
         return None
 
 

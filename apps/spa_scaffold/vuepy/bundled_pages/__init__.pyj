@@ -1,0 +1,3 @@
+# vuepy/bundled_pages/__init__.pyj
+import .index
+import .search_box

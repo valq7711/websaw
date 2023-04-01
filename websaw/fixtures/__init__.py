@@ -1,4 +1,4 @@
-from .template import Template, UTemplate, SPAComponent
+from . import templates
 from .session import Session, GroupSession
 from .dal import DAL
 from .url import URL
@@ -7,9 +7,7 @@ from .env import Env
 
 
 __all__ = (
-    'Template',
-    'UTemplate',
-    'SPAComponent',
+    'templates',
     'Session', 'GroupSession',
     'DAL',
     'URL',

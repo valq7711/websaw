@@ -1,8 +1,9 @@
-import urllib
+import urllib.parse
 import sys
 import os
 import logging
-import importlib
+import importlib.util
+import importlib.machinery
 import threading
 import functools
 import time
@@ -11,19 +12,97 @@ import datetime
 import enum
 import types
 import json
+from pathlib import Path
+from typing import TypeVar, Type, Union, Tuple, Iterable, Any, Dict, List
 
-from .globs import response
-from .exceptions import HTTP
 
 url_quote = urllib.parse.quote
 
+# TODO move unrelated stuff out of core-folder
 
-def redirect(location):
-    """our redirect does not delete cookies and headers like bottle.HTTPResponse does;
-    it is considered a success, not failure"""
-    response.headers["Location"] = str(location)
-    raise HTTP(303)
 
+# #### make_storage ##############
+
+class StorageMixin:
+    __slots__ = ()
+
+    def __init__(self, **kw):
+        dct = {**self.__slots_defaults__, **kw}
+        [setattr(self, k, v) for k, v in dct.items()]
+
+    def keys(self) -> List[str]:
+        return [*self.__class__.__slots__]
+
+    def update(self, dct: dict):
+        [setattr(self, k, v) for k, v in dct.items()]
+
+    def __getitem__(self, k):
+        try:
+            return getattr(self, k)
+        except AttributeError:
+            raise KeyError(k)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {k: getattr(self, k) for k in self.__class__.__slots__}
+
+    def items(self) -> Iterable[Tuple[str, Any]]:
+        return ((k, getattr(self, k)) for k in self.__class__.__slots__)
+
+    def get_defaults(self):
+        return {**self.__slots_defaults__}
+
+
+T = TypeVar('T')
+
+
+def make_storage(cls: Type[T]) -> Union[Type[T], Type[StorageMixin]]:
+    """
+    Example:
+
+    ```python
+    @make_slotted
+    class Config:
+        host = '127.0.0.1'
+        port = 8000
+
+    cfg = Config(port=22)
+    cfg = Config(foo=22)  # Attribute error
+
+    cfg.host = '1.2.3.4'
+    cfg.foo = 0  # Attribute error
+    ```
+
+    If some methods required - use mixin:
+
+    ```python
+    @make_slotted
+    class Config(SomeMixin):
+        ...
+    ```
+    """
+    '''
+    if cls is None:
+        return lambda cls: make_storage(cls, **opt)
+    '''
+
+    defaults = {k: v for k, v in cls.__dict__.items() if not k.startswith('__')}
+
+    dct = {
+        '__slots__': [*defaults],
+        '__slots_defaults__': defaults,
+    }
+
+    if cls.__bases__ == (object,):
+        bases = (StorageMixin,)
+    else:
+        if any('__slots__' not in c.__dict__ for c in cls.__bases__):
+            raise RuntimeError('Bases should have __slots__ attr.')
+        bases = tuple([StorageMixin, *cls.__bases__])
+
+    return type(cls.__name__, bases, dct)
+
+
+# #### MetaPathRouter ##############
 
 class MetaPathRouter:
     """
@@ -70,17 +149,16 @@ def safely(func, exceptions=(Exception,), log=False, default=None):
         return func()
     except exceptions as err:
         if log:
+            # TODO getlogger
             logging.warn(str(err))
         return default() if callable(default) else default
 
 
-def module2filename(module_name, base_path=None):
-    fp = sys.modules[module_name].__file__
+def module2filename(module_name, base_path: Path = None):
+    fp = Path(sys.modules[module_name].__file__)
     if base_path:
-        base_path = f'{base_path.rstrip(os.sep)}{os.sep}'
-        if fp.startswith(base_path):
-            fp = fp[len(base_path):]
-    return fp
+        fp = fp.relative_to(base_path)
+    return str(fp)
 
 
 ########################################################################################
@@ -209,4 +287,3 @@ def objectify(obj):
 
 def dumps(obj, sort_keys=True, indent=2, ensure_ascii=False):
     return json.dumps(obj, default=objectify, sort_keys=sort_keys, indent=indent, ensure_ascii=ensure_ascii)
-

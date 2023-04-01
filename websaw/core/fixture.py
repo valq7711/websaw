@@ -72,6 +72,6 @@ class Fixture:
 
 
 class SPAFixture(Fixture):
-    def make_component_reference(self, ctx, prefix):
-        pass
+    def make_component_reference(self, ctx, prefix) -> str:
+        raise NotImplementedError()
 
