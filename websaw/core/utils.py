@@ -287,3 +287,47 @@ def objectify(obj):
 
 def dumps(obj, sort_keys=True, indent=2, ensure_ascii=False):
     return json.dumps(obj, default=objectify, sort_keys=sort_keys, indent=indent, ensure_ascii=ensure_ascii)
+
+
+def compile_pyjs_folder(pyjsaw_folder: Path, dest_folder: Path):
+    try:
+        import pyjsaw
+    except ImportError:
+        return
+
+    pyjs_dir = pyjsaw_folder
+    if not pyjs_dir.is_dir():
+        return
+    out_dir = dest_folder
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True, exist_ok=True)
+    elif not out_dir.is_dir():
+        return
+
+    pyjsaw_py = pyjs_dir / '__pyjsaw__.py'
+    if pyjsaw_py.exists():
+        pyjsaw_py = pyjsaw_py.read_text()
+        pyjsaw_py = compile(pyjsaw_py, '__payjsaw__.py', 'exec')
+        out = {}
+        exec(pyjsaw_py, {"__builtins__": {}}, out)
+        files = out['outmap']
+        if isinstance(files, list):
+            files = {f'{f}.py': f'{f}.js' for f in files}
+        else:
+            assert isinstance(files, dict)
+            files = {f'{py}.py': f'{js}.js' for py, js in files.items()}
+    else:
+        files = {
+            f.name: f'{f.stem}.js'
+            for f in pyjs_dir.iterdir() if f.is_file() and f.suffix == '.py' and f.stem != '__pyjsaw__'
+        }
+
+    for py, js in files.items():
+        py = pyjs_dir / py
+        try:
+            js_code = pyjsaw.compile(py)
+        except Exception as exc:
+            raise exc
+
+        js_file = out_dir / js
+        js_file.write_text(js_code, encoding='utf8')
