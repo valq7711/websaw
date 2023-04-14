@@ -135,7 +135,7 @@ class BaseApp:
         self._mixins.extend(mixins)
         self.context.extend(*[m.context for m in mixins])
 
-    def _register_route(self, fun, route_args, fixtures: List[str] = None):
+    def _register_route(self, fun: Callable, route_args: Tuple[tuple, dict], fixtures: List[str] = None):
         meta = self._registered.setdefault(
             fun, RouteMeta(routes_args=[], fixtures=[])
         )
@@ -165,13 +165,21 @@ class BaseApp:
             return Fixtured(h, fixt)
         return decorator
 
-    def mount(self, config: dict = None):
+    def mount(self, config: dict = None, *, as_mixin=False):
+        mount_meth = self._mount if not as_mixin else self._mount_as_mixin
         try:
-            self._mount(config)
+            mount_meth(config)
         except Exception:
             if self.app_data is not None:
                 self.unmount()
             raise
+
+    def _mount_as_mixin(self, config: dict = None):
+        if config is None:
+            config = self.default_config
+
+        app_data = AppData(**config)
+        self._compile_pyjs_folder(app_data.folder, app_data.static_folder)
 
     def _mount(self, config: dict = None):
         if config is None:
@@ -192,7 +200,7 @@ class BaseApp:
                 else:
                     self._mount_route(h, route_args, route_kw)
 
-        self._compile_pyjs_folder()
+        self._compile_pyjs_folder(self.app_data.folder, self.app_data.static_folder)
 
         # make static/spa_routes.js
         # 'redirect' all spa-routes to 'index'
@@ -274,9 +282,9 @@ class BaseApp:
             prefix = f'mxn/{mixin_data.app_name}'
         return spa_component.make_component_reference(ctx, prefix)
 
-    def _compile_pyjs_folder(self):
-        pyjs_dir = Path(self.app_data.folder) / 'pyjs'
-        out_dir = Path(self.app_data.static_folder) / 'pyjs'
+    def _compile_pyjs_folder(self, app_folder, app_static_folder):
+        pyjs_dir = Path(app_folder) / 'pyjs'
+        out_dir = Path(app_static_folder) / 'pyjs'
         compile_pyjs_folder(pyjs_dir, out_dir)
 
     def _mount_spa_routes(self):
