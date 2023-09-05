@@ -1,0 +1,27 @@
+
+.has-bg-img { 
+    position:relative;
+}
+
+.has-bg-img:before {
+    content: ' ';
+    background: url('/landing/static/websaw.png') no-repeat center/contain; 
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    opacity: 0.15;
+    background-repeat: no-repeat;
+    background-position: 50% 0;
+    background-size: contain;
+}
+      
+has-bg-img-content {
+    position: relative;
+}
+
+.my-navbar-item img {
+    max-height: 2.5rem;
+}
